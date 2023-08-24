@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { DragDropContext } from "react-beautiful-dnd";
+import { DragDropContext, DragStart } from "react-beautiful-dnd";
 import DroppableStrictMode from "../DroppableStrictMode";
 import { DraggableComponent } from "../DraggableComponent";
 import type { Config, Data, Field } from "../../types/Config";
@@ -149,11 +149,18 @@ export function Puck({
 
   const [leftSidebarVisible, setLeftSidebarVisible] = useState(true);
 
+  const [draggedItem, setDraggedItem] = useState<DragStart>();
+
   return (
     <div className="puck">
       <DragDropContext
         onDragUpdate={onDragUpdate}
+        onDragStart={(start) => {
+          setDraggedItem(start);
+        }}
         onDragEnd={(droppedItem) => {
+          setDraggedItem(undefined);
+
           if (!droppedItem.destination) {
             console.warn("No destination specified");
             return;
@@ -532,6 +539,7 @@ export function Puck({
                     setContent: (content) => {
                       setData({ ...data, content });
                     },
+                    draggedItem,
                   }}
                 >
                   <DropZone
@@ -543,7 +551,6 @@ export function Puck({
                       // zoom: 1.33,
                     }}
                     // itemStyle={{ zoom: 0.75 }}
-                    isDisabled
                   />
                 </DropZoneProvider>
               </Page>

@@ -4,6 +4,7 @@ import { Config, Content, Data } from "../../types/Config";
 import { DraggableComponent } from "../DraggableComponent";
 import DroppableStrictMode from "../DroppableStrictMode";
 import { Button } from "../Button";
+import { DragStart } from "react-beautiful-dnd";
 
 const dropZoneContext = createContext<{
   content: Content;
@@ -15,18 +16,18 @@ const dropZoneContext = createContext<{
   setChildHovering?: (isHovering: boolean) => void;
   isChildHovering?: boolean;
   draggableParentId?: string;
+  draggedItem?: DragStart;
 } | null>(null);
 
 export const DropZoneProvider = dropZoneContext.Provider;
 
 export function DropZone({
   content: _content,
-  droppableId,
+  droppableId: _droppableId,
   id,
   direction = "vertical",
   style,
   itemStyle,
-  isDisabled,
 }: {
   content?: Content;
 
@@ -35,7 +36,6 @@ export function DropZone({
   direction?: "vertical" | "horizontal";
   style?: CSSProperties;
   itemStyle?: CSSProperties;
-  isDisabled?: boolean;
 }) {
   const { onDragUpdate, placeholderStyle } = usePlaceholderStyle();
 
@@ -58,6 +58,7 @@ export function DropZone({
     setChildHovering: setParentChildHovering,
     draggableParentId,
     dropzones,
+    draggedItem,
   } = ctx;
 
   let content = _content;
@@ -82,11 +83,17 @@ export function DropZone({
     content = dropzone;
   }
 
-  //   console.log(draggableParentId, id, content);
+  const droppableId = _droppableId || `${draggableParentId}:${id}`;
+
+  const isDisabled =
+    draggedItem &&
+    draggedItem.source.droppableId.split(":")[0] !==
+      droppableId.split(":")[0] &&
+    draggedItem.source.droppableId !== "component-list";
 
   return (
     <DroppableStrictMode
-      droppableId={droppableId || `${draggableParentId}:${id}`}
+      droppableId={droppableId}
       direction={direction}
       isDropDisabled={isDisabled}
     >
@@ -128,7 +135,7 @@ export function DropZone({
                   }}
                 >
                   <DraggableComponent
-                    // isDragDisabled={isDisabled}
+                    isDragDisabled={isDisabled}
                     label={item.type.toString()}
                     id={`draggable-${id}`}
                     index={i}
