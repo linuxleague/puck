@@ -50,12 +50,14 @@ export const DraggableComponent = ({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={getClassName({ isSelected, isModifierHeld })}
+          className={getClassName({
+            isSelected,
+            isModifierHeld,
+            isDragging: snapshot.isDragging,
+          })}
           style={{
             ...provided.draggableProps.style,
             cursor: isModifierHeld ? "initial" : "grab",
-            // maxWidth: snapshot.isDragging ? 50 : "auto",
-            overflow: snapshot.isDragging ? "hidden" : "auto",
           }}
           onMouseOver={onMouseOver}
           onMouseOut={onMouseOut}

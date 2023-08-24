@@ -2,6 +2,11 @@
   position: relative;
 }
 
+.DraggableComponent--isDragging {
+  overflow: hidden;
+  box-shadow: inset 0 0 0 4px var(--puck-color-azure-6);
+}
+
 .DraggableComponent-contents {
   position: relative; /* Reset stacking context */
 }
