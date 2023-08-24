@@ -35,7 +35,10 @@ export const Columns: ComponentConfig<ColumnsProps> = {
   render: ({ columns }) => {
     return (
       <Section>
-        <div className={getClassName()}>
+        <div
+          className={getClassName()}
+          style={{ gridTemplateColumns: `repeat(${columns.length},1fr)` }}
+        >
           {columns.map((column, idx) => (
             <div key={idx} className={getClassName("col")}>
               <DropZone id={`column-${idx}`} />
