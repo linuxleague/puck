@@ -17,7 +17,7 @@ const dropZoneContext = createContext<{
   isChildHovering?: boolean;
   draggableParentId?: string;
   draggedItem?: DragStart;
-  placeholderStyle: CSSProperties;
+  placeholderStyle?: CSSProperties;
 } | null>(null);
 
 export const DropZoneProvider = dropZoneContext.Provider;
@@ -52,11 +52,8 @@ export function DropZone({
     config,
     selectedIndex,
     setSelectedIndex,
-    setContent,
-    isChildHovering: isParentChildHovering,
     setChildHovering: setParentChildHovering,
     draggableParentId,
-    dropzones,
     draggedItem,
     placeholderStyle,
   } = ctx;
@@ -65,8 +62,6 @@ export function DropZone({
 
   if (draggableParentId) {
     let dropzone: Content = [];
-
-    // console.log(draggableParentId);
 
     for (let i = 0; i < ctx.content.length; i++) {
       const item = ctx.content[i];
@@ -83,12 +78,16 @@ export function DropZone({
     content = dropzone;
   }
 
+  const draggedItemParentId =
+    draggedItem && draggedItem.source.droppableId.split(":")[0];
+
   const droppableId = _droppableId || `${draggableParentId}:${id}`;
 
+  const sharedParent = draggedItemParentId === droppableId.split(":")[0];
+
   const isDisabled =
+    !sharedParent &&
     draggedItem &&
-    draggedItem.source.droppableId.split(":")[0] !==
-      droppableId.split(":")[0] &&
     draggedItem.source.droppableId !== "component-list";
 
   return (
@@ -106,6 +105,15 @@ export function DropZone({
             zIndex: 1,
             position: "relative",
             minHeight: 64,
+            height: "100%",
+            outline:
+              snapshot.isDraggingOver || sharedParent ? "3px dashed" : "",
+            outlineColor: snapshot.isDraggingOver
+              ? "var(--puck-color-azure-3)"
+              : sharedParent
+              ? "var(--puck-color-azure-7)"
+              : "none",
+            outlineOffset: -3,
             width: snapshot.isDraggingOver ? "100%" : "auto",
             overflow: snapshot.isDraggingOver ? "hidden" : "auto",
           }}
@@ -192,7 +200,8 @@ export function DropZone({
             <div
               style={{
                 ...placeholderStyle,
-                background: "var(--puck-color-azure-8)",
+                background: "var(--puck-color-azure-4)",
+                opacity: 0.3,
                 zIndex: 0,
               }}
             />
