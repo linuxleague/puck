@@ -32,10 +32,6 @@ export const InputOrGroup = ({
   readOnly?: boolean;
 }) => {
   if (field.type === "array") {
-    if (!field.arrayFields) {
-      return null;
-    }
-
     return (
       <div className={getClassName()}>
         <b className={getClassName("label")}>
@@ -71,7 +67,7 @@ export const InputOrGroup = ({
                   </div>
                 </summary>
                 <fieldset>
-                  {Object.keys(field.arrayFields!).map((fieldName) => {
+                  {Object.keys(field.arrayFields || {}).map((fieldName) => {
                     const subField = field.arrayFields![fieldName];
 
                     return (
@@ -235,6 +231,10 @@ export const InputOrGroup = ({
         </div>
       </div>
     );
+  }
+
+  if (field.type === "dropzone") {
+    return null;
   }
 
   return (

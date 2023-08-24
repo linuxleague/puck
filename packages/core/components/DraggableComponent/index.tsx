@@ -13,26 +13,39 @@ export const DraggableComponent = ({
   index,
   isSelected = false,
   onClick = () => null,
+  onMouseOver = () => null,
+  onMouseOut = () => null,
   onDelete = () => null,
   onDuplicate = () => null,
   debug,
   label,
+  isHovering = false,
+  isDragDisabled,
 }: {
   children: ReactNode;
   id: string;
   index: number;
   isSelected?: boolean;
   onClick?: (e: SyntheticEvent) => void;
+  onMouseOver?: (e: SyntheticEvent) => void;
+  onMouseOut?: (e: SyntheticEvent) => void;
   onDelete?: (e: SyntheticEvent) => void;
   onDuplicate?: (e: SyntheticEvent) => void;
   debug?: string;
   label?: string;
+  isHovering: boolean;
+  isDragDisabled?: boolean;
 }) => {
   const isModifierHeld = useModifierHeld("Alt");
 
   return (
-    <Draggable key={id} draggableId={id} index={index}>
-      {(provided) => (
+    <Draggable
+      key={id}
+      draggableId={id}
+      index={index}
+      isDragDisabled={isDragDisabled}
+    >
+      {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
@@ -41,23 +54,32 @@ export const DraggableComponent = ({
           style={{
             ...provided.draggableProps.style,
             cursor: isModifierHeld ? "initial" : "grab",
+            // maxWidth: snapshot.isDragging ? 50 : "auto",
+            overflow: snapshot.isDragging ? "hidden" : "auto",
           }}
+          onMouseOver={onMouseOver}
+          onMouseOut={onMouseOut}
         >
           {debug}
           <div className={getClassName("contents")}>{children}</div>
-          <div className={getClassName("overlay")} onClick={onClick}>
-            <div className={getClassName("actions")}>
-              {label && (
-                <div className={getClassName("actionsLabel")}>{label}</div>
-              )}
-              <button className={getClassName("action")} onClick={onDuplicate}>
-                <Copy />
-              </button>
-              <button className={getClassName("action")} onClick={onDelete}>
-                <Trash />
-              </button>
+          {isHovering && (
+            <div className={getClassName("overlay")} onClick={onClick}>
+              <div className={getClassName("actions")}>
+                {label && (
+                  <div className={getClassName("actionsLabel")}>{label}</div>
+                )}
+                <button
+                  className={getClassName("action")}
+                  onClick={onDuplicate}
+                >
+                  <Copy />
+                </button>
+                <button className={getClassName("action")} onClick={onDelete}>
+                  <Trash />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </Draggable>

@@ -1,5 +1,6 @@
 import { Config, Data } from "@measured/puck";
 import { ButtonGroup, ButtonGroupProps } from "./blocks/ButtonGroup";
+import { Columns, ColumnsProps } from "./blocks/Columns";
 import { Hero, HeroProps } from "./blocks/Hero";
 import { Heading, HeadingProps } from "./blocks/Heading";
 import { FeatureList, FeatureListProps } from "./blocks/FeatureList";
@@ -12,6 +13,7 @@ import Root, { RootProps } from "./root";
 
 type Props = {
   ButtonGroup: ButtonGroupProps;
+  Columns: ColumnsProps;
   Hero: HeroProps;
   Heading: HeadingProps;
   FeatureList: FeatureListProps;
@@ -28,6 +30,7 @@ export const conf: Config<Props, RootProps> = {
   },
   components: {
     ButtonGroup,
+    Columns,
     Hero,
     Heading,
     FeatureList,

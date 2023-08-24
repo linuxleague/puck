@@ -25,6 +25,9 @@ import { scrollIntoView } from "../../lib/scroll-into-view";
 import { Globe, Sidebar } from "react-feather";
 import { Heading } from "../Heading";
 import { IconButton } from "../IconButton/IconButton";
+import { DropZone, DropZoneProvider } from "../DropZone";
+import { remove } from "../../lib/remove";
+import { insert } from "../../lib/insert";
 
 const Field = () => {};
 
@@ -157,7 +160,10 @@ export function Puck({
           }
 
           // New component
-          if (droppedItem.source.droppableId === "component-list") {
+          if (
+            droppedItem.source.droppableId === "component-list" &&
+            droppedItem.destination
+          ) {
             const emptyComponentData = {
               type: droppedItem.draggableId,
               props: {
@@ -169,16 +175,48 @@ export function Puck({
 
             const newData = { ...data };
 
-            newData.content.splice(
-              droppedItem.destination.index,
-              0,
-              emptyComponentData
-            );
+            if (droppedItem.destination.droppableId === "puck-drop-zone") {
+              newData.content.splice(
+                droppedItem.destination.index,
+                0,
+                emptyComponentData
+              );
+            } else {
+              const [destinationParentId, destinationDropzoneKey] =
+                droppedItem.destination.droppableId.split(":");
+
+              newData.content = data.content.map((item) => {
+                const dropzones = item.dropzones || {
+                  [destinationDropzoneKey]: [],
+                };
+
+                const sourceIndex = droppedItem.source.index;
+                const destinationIndex = droppedItem.destination!.index;
+
+                if (item.props.id === destinationParentId) {
+                  return {
+                    ...item,
+                    dropzones: {
+                      ...dropzones,
+                      [destinationDropzoneKey]: insert(
+                        dropzones[destinationDropzoneKey] || [],
+                        destinationIndex,
+                        emptyComponentData
+                      ),
+                    },
+                  };
+                }
+
+                return item;
+              });
+            }
 
             setData(newData);
 
             setSelectedIndex(droppedItem.destination.index);
-          } else {
+
+            // Reorder
+          } else if (droppedItem.source.droppableId === "puck-drop-zone") {
             setData({
               ...data,
               content: reorder(
@@ -189,6 +227,133 @@ export function Puck({
             });
 
             setSelectedIndex(null);
+          } else {
+            const [sourceParentId, sourceDropzoneKey] =
+              droppedItem.source.droppableId.split(":");
+
+            const [destinationParentId, destinationDropzoneKey] =
+              droppedItem.destination.droppableId.split(":");
+
+            const sourceIndex = droppedItem.source.index;
+            const destinationIndex = droppedItem.destination.index;
+
+            console.log(
+              sourceParentId,
+              sourceDropzoneKey,
+              destinationParentId,
+              destinationDropzoneKey,
+              data.content,
+              droppedItem.source,
+              droppedItem.destination
+            );
+
+            let content = [...data.content];
+
+            if (droppedItem.destination.droppableId === "puck-drop-zone") {
+              content = insert(
+                content,
+                destinationIndex,
+                content.find(
+                  (candidate) => candidate.props.id === sourceParentId
+                )?.dropzones![sourceDropzoneKey][sourceIndex]
+              );
+
+              console.log("inserted", content);
+            }
+
+            content = data.content.map((item) => {
+              // TODO i have no way to identify the prop name in the component
+              // TODO also auto generated droppableIds clash within the same parent
+
+              const dropzones = item.dropzones || { [sourceDropzoneKey]: [] };
+
+              // Reorder within same dropzone
+              if (
+                sourceParentId === destinationParentId &&
+                sourceDropzoneKey === destinationDropzoneKey
+              ) {
+                if (item.props.id === sourceParentId) {
+                  return {
+                    ...item,
+                    dropzones: {
+                      ...dropzones,
+                      [sourceDropzoneKey]: reorder(
+                        dropzones[sourceDropzoneKey],
+                        sourceIndex,
+                        destinationIndex
+                      ),
+                    },
+                  };
+                }
+
+                // Move between dropzones
+              } else {
+                const sourceItem = content.find(
+                  (candidate) => candidate.props.id === sourceParentId
+                )?.dropzones![sourceDropzoneKey][sourceIndex];
+
+                if (
+                  item.props.id === sourceParentId &&
+                  item.props.id === destinationParentId
+                ) {
+                  return {
+                    ...item,
+                    dropzones: {
+                      ...dropzones,
+                      [sourceDropzoneKey]: remove(
+                        dropzones[sourceDropzoneKey],
+                        sourceIndex
+                      ),
+                      [destinationDropzoneKey]: insert(
+                        dropzones[destinationDropzoneKey] || [],
+                        destinationIndex,
+                        sourceItem
+                      ),
+                    },
+                  };
+                } else if (item.props.id === sourceParentId) {
+                  return {
+                    ...item,
+                    dropzones: {
+                      ...dropzones,
+                      [sourceDropzoneKey]: remove(
+                        dropzones[sourceDropzoneKey],
+                        sourceIndex
+                      ),
+                    },
+                  };
+                } else if (
+                  item.props.id === destinationParentId &&
+                  destinationParentId !== "puck-drop-zone"
+                ) {
+                  //  console.log(
+                  //     "insert",
+                  //     data.content.find(
+                  //       (candidate) => candidate.props.id === sourceParentId
+                  //     )?.dropzones![sourceDropzoneKey][sourceIndex]
+                  //   );
+
+                  return {
+                    ...item,
+                    dropzones: {
+                      ...dropzones,
+                      [destinationDropzoneKey]: insert(
+                        dropzones[destinationDropzoneKey] || [],
+                        destinationIndex,
+                        sourceItem
+                      ),
+                    },
+                  };
+                }
+              }
+
+              return item;
+            });
+
+            setData({
+              ...data,
+              content,
+            });
           }
         }}
       >
@@ -354,95 +519,33 @@ export function Puck({
                 borderRadius: 16,
                 border: "1px solid var(--puck-color-grey-8)",
                 overflow: "hidden",
-                zoom: 0.75,
+                // zoom: 0.75,
               }}
             >
               <Page data={data} {...data.root}>
-                <DroppableStrictMode droppableId="droppable">
-                  {(provided, snapshot) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      style={{
-                        minHeight: 128,
-                        position: "relative",
-                        zoom: 1.33,
-                      }}
-                      id="puck-drop-zone"
-                    >
-                      {data.content.map((item, i) => {
-                        return (
-                          <DraggableComponent
-                            key={item.props.id}
-                            label={item.type.toString()}
-                            id={`draggable-${item.props.id}`}
-                            index={i}
-                            isSelected={selectedIndex === i}
-                            onClick={(e) => {
-                              setSelectedIndex(i);
-                              e.stopPropagation();
-                            }}
-                            onDelete={(e) => {
-                              const newData = { ...data };
-                              newData.content.splice(i, 1);
-
-                              setSelectedIndex(null);
-                              setData(newData);
-
-                              e.stopPropagation();
-                            }}
-                            onDuplicate={(e) => {
-                              const newData = { ...data };
-                              const newItem = {
-                                ...newData.content[i],
-                                props: {
-                                  ...newData.content[i].props,
-                                  id: `${
-                                    newData.content[i].type
-                                  }-${new Date().getTime()}`,
-                                },
-                              };
-
-                              newData.content.splice(i + 1, 0, newItem);
-
-                              setData(newData);
-
-                              e.stopPropagation();
-                            }}
-                          >
-                            <div style={{ zoom: 0.75 }}>
-                              {config.components[item.type] ? (
-                                config.components[item.type].render({
-                                  ...config.components[item.type].defaultProps,
-                                  ...item.props,
-                                  editMode: true,
-                                })
-                              ) : (
-                                <div
-                                  style={{ padding: 48, textAlign: "center" }}
-                                >
-                                  No configuration for {item.type}
-                                </div>
-                              )}
-                            </div>
-                          </DraggableComponent>
-                        );
-                      })}
-
-                      {provided.placeholder}
-
-                      {snapshot.isDraggingOver && (
-                        <div
-                          style={{
-                            ...placeholderStyle,
-                            background: "var(--puck-color-azure-8)",
-                            zIndex: 0,
-                          }}
-                        />
-                      )}
-                    </div>
-                  )}
-                </DroppableStrictMode>
+                <DropZoneProvider
+                  value={{
+                    content: data.content,
+                    selectedIndex,
+                    setSelectedIndex,
+                    config,
+                    setContent: (content) => {
+                      setData({ ...data, content });
+                    },
+                  }}
+                >
+                  <DropZone
+                    droppableId="puck-drop-zone"
+                    content={data.content}
+                    style={{
+                      minHeight: 128,
+                      position: "relative",
+                      // zoom: 1.33,
+                    }}
+                    // itemStyle={{ zoom: 0.75 }}
+                    isDisabled
+                  />
+                </DropZoneProvider>
               </Page>
             </div>
           </div>

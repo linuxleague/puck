@@ -9,6 +9,8 @@ export const Button = ({
   children,
   href,
   onClick,
+  onMouseOver,
+  onMouseOut,
   variant = "primary",
   type,
   disabled,
@@ -21,6 +23,8 @@ export const Button = ({
   children: ReactNode;
   href?: string;
   onClick?: (e: any) => void | Promise<void>;
+  onMouseOver?: (e: any) => void | Promise<void>;
+  onMouseOut?: (e: any) => void | Promise<void>;
   variant?: "primary" | "secondary";
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
@@ -51,6 +55,8 @@ export const Button = ({
           setLoading(false);
         });
       }}
+      onMouseOver={onMouseOver}
+      onMouseOut={onMouseOut}
       type={type}
       disabled={disabled || loading}
       tabIndex={tabIndex}

@@ -18,7 +18,8 @@ export type Field<
     | "select"
     | "array"
     | "external"
-    | "radio";
+    | "radio"
+    | "dropzone";
   label?: string;
   adaptor?: Adaptor;
   adaptorParams?: object;
@@ -31,6 +32,7 @@ export type Field<
     label: string;
     value: string | number | boolean;
   }[];
+  dropzoneId?: string;
 };
 
 export type DefaultRootProps = {
@@ -51,12 +53,23 @@ export type Fields<
   >]: Field<ComponentProps[PropName][0]>;
 };
 
+export type Content<
+  Props extends { [key: string]: any } = { [key: string]: any }
+> = MappedItem<Props>[];
+
 export type ComponentConfig<
   ComponentProps extends DefaultComponentProps = DefaultComponentProps,
-  DefaultProps = ComponentProps
+  DefaultProps = ComponentProps,
+  AllProps extends { [key: string]: any } = { [key: string]: any }
 > = {
   render: (props: ComponentProps) => ReactElement;
-  defaultProps?: DefaultProps;
+  defaultProps?: {
+    // Swap "ReactNode" out with Content
+    [PropName in keyof DefaultProps]: DefaultProps[PropName] extends ReactNode
+      ? Content<AllProps>
+      : DefaultProps[PropName];
+  };
+  // defaultProps?: DefaultProps;
   fields?: Fields<ComponentProps>;
 };
 
@@ -65,11 +78,16 @@ export type Config<
   RootProps extends DefaultRootProps = DefaultRootProps
 > = {
   components: {
-    [ComponentName in keyof Props]: ComponentConfig<Props[ComponentName]>;
+    [ComponentName in keyof Props]: ComponentConfig<
+      Props[ComponentName],
+      Props[ComponentName],
+      Props
+    >;
   };
   root?: ComponentConfig<
     RootProps & { children: ReactNode },
-    Partial<RootProps & { children: ReactNode }>
+    Partial<RootProps & { children: ReactNode }>,
+    Props
   >;
 };
 
@@ -79,6 +97,7 @@ type MappedItem<Props extends { [key: string]: any } = { [key: string]: any }> =
     props: {
       [key: string]: any;
     } & { id: string };
+    dropzones?: Record<string, Content>;
   };
 
 export type Data<
@@ -89,5 +108,5 @@ export type Data<
   }
 > = {
   root: RootProps;
-  content: MappedItem<Props>[];
+  content: Content<Props>;
 };
