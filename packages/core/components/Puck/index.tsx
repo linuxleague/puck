@@ -540,6 +540,7 @@ export function Puck({
                       setData({ ...data, content });
                     },
                     draggedItem,
+                    placeholderStyle,
                   }}
                 >
                   <DropZone

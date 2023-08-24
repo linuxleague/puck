@@ -17,6 +17,7 @@ const dropZoneContext = createContext<{
   isChildHovering?: boolean;
   draggableParentId?: string;
   draggedItem?: DragStart;
+  placeholderStyle: CSSProperties;
 } | null>(null);
 
 export const DropZoneProvider = dropZoneContext.Provider;
@@ -37,8 +38,6 @@ export function DropZone({
   style?: CSSProperties;
   itemStyle?: CSSProperties;
 }) {
-  const { onDragUpdate, placeholderStyle } = usePlaceholderStyle();
-
   const ctx = useContext(dropZoneContext);
 
   const [hoveringIndex, setHoveringIndex] = useState<number | undefined>();
@@ -59,6 +58,7 @@ export function DropZone({
     draggableParentId,
     dropzones,
     draggedItem,
+    placeholderStyle,
   } = ctx;
 
   let content = _content;
