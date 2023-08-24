@@ -76,14 +76,14 @@ export function DropZone({
     content = dropzone;
   }
 
-  const targetDroppableId = draggedItem && draggedItem.source.droppableId;
+  const draggedDroppableId = draggedItem && draggedItem.source.droppableId;
 
-  const targetParentId =
+  const draggedParentId =
     draggedItem && draggedItem.source.droppableId.split(":")[0];
 
   const droppableId = _droppableId || `${draggableParentId}:${id}`;
 
-  const sharedParent = targetParentId === droppableId.split(":")[0];
+  const sharedParent = draggedParentId === droppableId.split(":")[0];
 
   const isDisabled =
     !sharedParent &&
@@ -152,7 +152,7 @@ export function DropZone({
                     isHovering={
                       hoveringIndex === i &&
                       !isChildHovering &&
-                      !targetDroppableId
+                      !draggedDroppableId
                     }
                     onClick={(e) => {
                       setSelectedIndex(i);
