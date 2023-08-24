@@ -28,7 +28,6 @@ export function DropZone({
   id,
   direction = "vertical",
   style,
-  itemStyle,
 }: {
   content?: Content;
 
@@ -36,7 +35,6 @@ export function DropZone({
   id?: string;
   direction?: "vertical" | "horizontal";
   style?: CSSProperties;
-  itemStyle?: CSSProperties;
 }) {
   const ctx = useContext(dropZoneContext);
 
@@ -102,6 +100,7 @@ export function DropZone({
           ref={provided?.innerRef}
           style={{
             ...style,
+            zoom: 1.33,
             zIndex: 1,
             position: "relative",
             minHeight: 64,
@@ -182,7 +181,7 @@ export function DropZone({
                       //   e.stopPropagation();
                     }}
                   >
-                    <div style={itemStyle}>
+                    <div style={{ zoom: 0.75 }}>
                       {config.components[item.type] ? (
                         config.components[item.type].render(props)
                       ) : (

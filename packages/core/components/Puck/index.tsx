@@ -526,7 +526,7 @@ export function Puck({
                 borderRadius: 16,
                 border: "1px solid var(--puck-color-grey-8)",
                 overflow: "hidden",
-                // zoom: 0.75,
+                zoom: 0.75,
               }}
             >
               <Page data={data} {...data.root}>
@@ -546,12 +546,6 @@ export function Puck({
                   <DropZone
                     droppableId="puck-drop-zone"
                     content={data.content}
-                    style={{
-                      minHeight: 128,
-                      position: "relative",
-                      // zoom: 1.33,
-                    }}
-                    // itemStyle={{ zoom: 0.75 }}
                   />
                 </DropZoneProvider>
               </Page>
