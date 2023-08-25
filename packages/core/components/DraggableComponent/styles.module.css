@@ -21,7 +21,7 @@
 .DraggableComponent-overlay {
   /* display: none; */
   display: block;
-  background-color: #cdcdcd50;
+  /* background-color: #cdcdcd50; */
   box-shadow: inset 0 0 0 4px var(--puck-color-azure-6);
   height: 100%;
   width: 100%;
@@ -29,7 +29,7 @@
   position: absolute;
   z-index: 1;
   font-family: var(--puck-font-stack);
-  pointer-events: none; /* breaks click */
+  pointer-events: none;
 }
 
 /* .DraggableComponent:hover .DraggableComponent-overlay {
@@ -56,6 +56,7 @@
   display: flex;
   gap: 4px;
   border: 1px solid var(--puck-color-grey-8);
+  pointer-events: auto;
 }
 
 .DraggableComponent-actionsLabel {

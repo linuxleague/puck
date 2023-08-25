@@ -28,6 +28,8 @@ import { IconButton } from "../IconButton/IconButton";
 import { DropZone, DropZoneProvider } from "../DropZone";
 import { remove } from "../../lib/remove";
 import { insert } from "../../lib/insert";
+import { rootDroppableId } from "../../lib/root-droppable-id";
+import { ItemSelector, getItem } from "../../lib/get-item";
 
 const Field = () => {};
 
@@ -84,7 +86,9 @@ export function Puck({
   headerPath?: string;
 }) {
   const [data, setData] = useState(initialData);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [itemSelector, setItemSelector] = useState<ItemSelector | null>(null);
+
+  const selectedItem = itemSelector ? getItem(itemSelector, data) : null;
 
   const Page = useCallback(
     (pageProps) => (
@@ -127,18 +131,16 @@ export function Puck({
     []
   );
 
-  const FieldWrapper =
-    selectedIndex !== null ? ComponentFieldWrapper : PageFieldWrapper;
+  const FieldWrapper = itemSelector ? ComponentFieldWrapper : PageFieldWrapper;
 
   const rootFields = config.root?.fields || defaultPageFields;
 
-  let fields =
-    selectedIndex !== null
-      ? (config.components[data.content[selectedIndex].type]?.fields as Record<
-          string,
-          Field<any>
-        >) || {}
-      : rootFields;
+  let fields = selectedItem
+    ? (config.components[selectedItem.type]?.fields as Record<
+        string,
+        Field<any>
+      >) || {}
+    : rootFields;
 
   useEffect(() => {
     if (onChange) onChange(data);
@@ -171,27 +173,28 @@ export function Puck({
             droppedItem.source.droppableId === "component-list" &&
             droppedItem.destination
           ) {
+            const id = `${droppedItem.draggableId}-${new Date().getTime()}`; // TODO make random string
             const emptyComponentData = {
               type: droppedItem.draggableId,
               props: {
                 ...(config.components[droppedItem.draggableId].defaultProps ||
                   {}),
-                id: `${droppedItem.draggableId}-${new Date().getTime()}`, // TODO make random string
+                id,
               },
             };
 
             const newData = { ...data };
 
-            if (droppedItem.destination.droppableId === "puck-drop-zone") {
+            const [destinationParentId, destinationDropzoneKey] =
+              droppedItem.destination.droppableId.split(":");
+
+            if (droppedItem.destination.droppableId === rootDroppableId) {
               newData.content.splice(
                 droppedItem.destination.index,
                 0,
                 emptyComponentData
               );
             } else {
-              const [destinationParentId, destinationDropzoneKey] =
-                droppedItem.destination.droppableId.split(":");
-
               newData.content = data.content.map((item) => {
                 const dropzones = item.dropzones || {
                   [destinationDropzoneKey]: [],
@@ -220,10 +223,14 @@ export function Puck({
 
             setData(newData);
 
-            setSelectedIndex(droppedItem.destination.index);
+            setItemSelector({
+              index: droppedItem.destination.index,
+              dropzone: destinationDropzoneKey,
+              parentId: destinationParentId,
+            });
 
             // Reorder
-          } else if (droppedItem.source.droppableId === "puck-drop-zone") {
+          } else if (droppedItem.source.droppableId === rootDroppableId) {
             setData({
               ...data,
               content: reorder(
@@ -233,7 +240,7 @@ export function Puck({
               ),
             });
 
-            setSelectedIndex(null);
+            setItemSelector(null);
           } else {
             const [sourceParentId, sourceDropzoneKey] =
               droppedItem.source.droppableId.split(":");
@@ -244,19 +251,9 @@ export function Puck({
             const sourceIndex = droppedItem.source.index;
             const destinationIndex = droppedItem.destination.index;
 
-            console.log(
-              sourceParentId,
-              sourceDropzoneKey,
-              destinationParentId,
-              destinationDropzoneKey,
-              data.content,
-              droppedItem.source,
-              droppedItem.destination
-            );
-
             let content = [...data.content];
 
-            if (droppedItem.destination.droppableId === "puck-drop-zone") {
+            if (droppedItem.destination.droppableId === rootDroppableId) {
               content = insert(
                 content,
                 destinationIndex,
@@ -264,8 +261,6 @@ export function Puck({
                   (candidate) => candidate.props.id === sourceParentId
                 )?.dropzones![sourceDropzoneKey][sourceIndex]
               );
-
-              console.log("inserted", content);
             }
 
             content = data.content.map((item) => {
@@ -331,15 +326,8 @@ export function Puck({
                   };
                 } else if (
                   item.props.id === destinationParentId &&
-                  destinationParentId !== "puck-drop-zone"
+                  destinationParentId !== rootDroppableId
                 ) {
-                  //  console.log(
-                  //     "insert",
-                  //     data.content.find(
-                  //       (candidate) => candidate.props.id === sourceParentId
-                  //     )?.dropzones![sourceDropzoneKey][sourceIndex]
-                  //   );
-
                   return {
                     ...item,
                     dropzones: {
@@ -492,7 +480,9 @@ export function Puck({
                     <OutlineList.Item
                       key={i}
                       onClick={() => {
-                        setSelectedIndex(i);
+                        setItemSelector({
+                          index: i,
+                        });
 
                         const id = data.content[i].props.id;
 
@@ -517,7 +507,7 @@ export function Puck({
               overflowY: "auto",
               gridArea: "editor",
             }}
-            onClick={() => setSelectedIndex(null)}
+            onClick={() => setItemSelector(null)}
           >
             <div
               className="puck-root"
@@ -532,9 +522,10 @@ export function Puck({
               <Page data={data} {...data.root}>
                 <DropZoneProvider
                   value={{
+                    data,
                     content: data.content,
-                    selectedIndex,
-                    setSelectedIndex,
+                    itemSelector,
+                    setItemSelector,
                     config,
                     setContent: (content) => {
                       setData({ ...data, content });
@@ -544,7 +535,7 @@ export function Puck({
                   }}
                 >
                   <DropZone
-                    droppableId="puck-drop-zone"
+                    droppableId={rootDroppableId}
                     content={data.content}
                   />
                 </DropZoneProvider>
@@ -564,13 +555,9 @@ export function Puck({
             <FieldWrapper data={data}>
               <SidebarSection
                 noPadding
-                breadcrumb={selectedIndex !== null ? "Page" : ""}
-                breadcrumbClick={() => setSelectedIndex(null)}
-                title={
-                  selectedIndex !== null
-                    ? (data.content[selectedIndex].type as string)
-                    : "Page"
-                }
+                breadcrumb={selectedItem ? "Page" : ""}
+                breadcrumbClick={() => setItemSelector(null)}
+                title={selectedItem ? selectedItem.type : "Page"}
               >
                 {Object.keys(fields).map((fieldName) => {
                   const field = fields[fieldName];
@@ -579,8 +566,8 @@ export function Puck({
                     let currentProps;
                     let newProps;
 
-                    if (selectedIndex !== null) {
-                      currentProps = data.content[selectedIndex].props;
+                    if (selectedItem) {
+                      currentProps = selectedItem.props;
                     } else {
                       currentProps = data.root;
                     }
@@ -618,32 +605,68 @@ export function Puck({
                       };
                     }
 
-                    if (selectedIndex !== null) {
-                      setData({
-                        ...data,
-                        content: replace(data.content, selectedIndex, {
-                          ...data.content[selectedIndex],
-                          props: newProps,
-                        }),
-                      });
+                    if (itemSelector) {
+                      if (itemSelector.parentId && itemSelector.dropzone) {
+                        // TODO simplify once we change dropzone data model
+                        setData({
+                          ...data,
+                          content: data.content.map((parentItem) => {
+                            if (parentItem.props.id === itemSelector.parentId) {
+                              const parentItemDropzones =
+                                parentItem.dropzones || {
+                                  [itemSelector.dropzone!]: [],
+                                };
+
+                              const item = {
+                                ...parentItemDropzones[itemSelector.dropzone!][
+                                  itemSelector.index
+                                ],
+                                props: newProps,
+                              };
+
+                              return {
+                                ...parentItem,
+                                dropzones: {
+                                  ...parentItemDropzones,
+                                  [itemSelector.dropzone!]: replace(
+                                    parentItemDropzones[itemSelector.dropzone!],
+                                    itemSelector.index,
+                                    item
+                                  ),
+                                },
+                              };
+                            }
+
+                            return parentItem;
+                          }),
+                        });
+                      } else {
+                        setData({
+                          ...data,
+                          content: replace(data.content, itemSelector.index, {
+                            ...selectedItem,
+                            props: newProps,
+                          }),
+                        });
+                      }
                     } else {
                       setData({ ...data, root: newProps });
                     }
                   };
 
-                  if (selectedIndex !== null) {
+                  if (selectedItem && itemSelector) {
                     return (
                       <InputOrGroup
-                        key={`${data.content[selectedIndex].props.id}_${fieldName}`}
+                        key={`${selectedItem.props.id}_${fieldName}`}
                         field={field}
                         name={fieldName}
                         label={field.label}
                         readOnly={
                           data.content[
-                            selectedIndex
+                            itemSelector.index
                           ].props._meta?.locked?.indexOf(fieldName) > -1
                         }
-                        value={data.content[selectedIndex].props[fieldName]}
+                        value={selectedItem.props[fieldName]}
                         onChange={onChange}
                       />
                     );

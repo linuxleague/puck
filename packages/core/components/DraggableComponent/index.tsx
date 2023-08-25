@@ -61,11 +61,14 @@ export const DraggableComponent = ({
           }}
           onMouseOver={onMouseOver}
           onMouseOut={onMouseOut}
+          onClick={
+            onClick
+          } /* This may not work if children have interactive background */
         >
           {debug}
           <div className={getClassName("contents")}>{children}</div>
-          {isHovering && (
-            <div className={getClassName("overlay")} onClick={onClick}>
+          {(isHovering || isSelected) && (
+            <div className={getClassName("overlay")}>
               <div className={getClassName("actions")}>
                 {label && (
                   <div className={getClassName("actionsLabel")}>{label}</div>

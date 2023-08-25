@@ -5,13 +5,15 @@ import { DraggableComponent } from "../DraggableComponent";
 import DroppableStrictMode from "../DroppableStrictMode";
 import { Button } from "../Button";
 import { DragStart } from "react-beautiful-dnd";
+import { ItemSelector, getItem } from "../../lib/get-item";
 
 const dropZoneContext = createContext<{
+  data: Data;
   content: Content;
   dropzones?: Record<string, Content>;
   config: Config;
-  selectedIndex: number | null;
-  setSelectedIndex: (newIndex: number | null) => void;
+  itemSelector: ItemSelector | null;
+  setItemSelector: (newIndex: ItemSelector | null) => void;
   setContent: (data: any) => void;
   setChildHovering?: (isHovering: boolean) => void;
   isChildHovering?: boolean;
@@ -47,9 +49,10 @@ export function DropZone({
 
   const {
     // These all need setting via context
+    data,
     config,
-    selectedIndex,
-    setSelectedIndex,
+    itemSelector,
+    setItemSelector,
     setChildHovering: setParentChildHovering,
     draggableParentId,
     draggedItem,
@@ -122,7 +125,7 @@ export function DropZone({
         >
           {content?.map &&
             content.map((item, i) => {
-              const id = item.props.id;
+              const componentId = item.props.id;
 
               const defaultedProps = {
                 ...config.components[item.type].defaultProps,
@@ -132,6 +135,11 @@ export function DropZone({
 
               const props = defaultedProps;
 
+              const isSelected =
+                (itemSelector &&
+                  getItem(itemSelector, data)?.props.id === componentId) ||
+                false;
+
               return (
                 <DropZoneProvider
                   key={item.props.id}
@@ -139,23 +147,27 @@ export function DropZone({
                     ...ctx,
                     isChildHovering,
                     setChildHovering,
-                    draggableParentId: id,
+                    draggableParentId: componentId,
                     dropzones: item.dropzones,
                   }}
                 >
                   <DraggableComponent
                     isDragDisabled={isDisabled}
                     label={item.type.toString()}
-                    id={`draggable-${id}`}
+                    id={`draggable-${componentId}`}
                     index={i}
-                    isSelected={selectedIndex === i}
+                    isSelected={isSelected}
                     isHovering={
                       hoveringIndex === i &&
                       !isChildHovering &&
                       !draggedDroppableId
                     }
                     onClick={(e) => {
-                      setSelectedIndex(i);
+                      setItemSelector({
+                        index: i,
+                        parentId: draggableParentId,
+                        dropzone: id,
+                      });
                       e.stopPropagation();
                     }}
                     onMouseOver={() => {
