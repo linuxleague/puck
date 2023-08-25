@@ -18,8 +18,7 @@ export type Field<
     | "select"
     | "array"
     | "external"
-    | "radio"
-    | "dropzone";
+    | "radio";
   label?: string;
   adaptor?: Adaptor;
   adaptorParams?: object;
@@ -32,7 +31,6 @@ export type Field<
     label: string;
     value: string | number | boolean;
   }[];
-  dropzoneId?: string;
 };
 
 export type DefaultRootProps = {
@@ -97,7 +95,6 @@ type MappedItem<Props extends { [key: string]: any } = { [key: string]: any }> =
     props: {
       [key: string]: any;
     } & { id: string };
-    dropzones?: Record<string, Content>;
   };
 
 export type Data<
