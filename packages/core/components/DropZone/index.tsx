@@ -6,17 +6,17 @@ import DroppableStrictMode from "../DroppableStrictMode";
 import { Button } from "../Button";
 import { DragStart } from "react-beautiful-dnd";
 import { ItemSelector, getItem } from "../../lib/get-item";
+import { PuckAction } from "../../lib/reducer";
+import { setupDropzone } from "../../lib/setup-dropzone";
+import { rootDroppableId } from "../../lib/root-droppable-id";
 
 const dropZoneContext = createContext<{
   data: Data;
-  content: Content;
-  dropzones?: Record<string, Content>;
   config: Config;
   itemSelector: ItemSelector | null;
   setItemSelector: (newIndex: ItemSelector | null) => void;
-  setContent: (data: any) => void;
+  dispatch: (action: PuckAction) => void;
   setChildHovering?: (isHovering: boolean) => void;
-  isChildHovering?: boolean;
   draggableParentId?: string;
   draggedItem?: DragStart;
   placeholderStyle?: CSSProperties;
@@ -25,15 +25,10 @@ const dropZoneContext = createContext<{
 export const DropZoneProvider = dropZoneContext.Provider;
 
 export function DropZone({
-  content: _content,
-  droppableId: _droppableId,
   id,
   direction = "vertical",
   style,
 }: {
-  content?: Content;
-
-  droppableId?: string;
   id?: string;
   direction?: "vertical" | "horizontal";
   style?: CSSProperties;
@@ -50,6 +45,7 @@ export function DropZone({
   const {
     // These all need setting via context
     data,
+    dispatch,
     config,
     itemSelector,
     setItemSelector,
@@ -59,43 +55,29 @@ export function DropZone({
     placeholderStyle,
   } = ctx;
 
-  let content = _content;
+  const draggedDroppableId = draggedItem && draggedItem.source.droppableId;
+  let content = data.content;
+  let dropzone = rootDroppableId;
+  let isDisabled = false;
+  let sharedParent = false;
 
-  if (draggableParentId) {
-    let dropzone: Content = [];
-
-    for (let i = 0; i < ctx.content.length; i++) {
-      const item = ctx.content[i];
-
-      if (item.props.id === draggableParentId && id) {
-        const dropzones = item.dropzones || {
-          [id]: [],
-        };
-
-        dropzone = dropzones[id];
-      }
-    }
-
-    content = dropzone;
+  if (draggableParentId && id) {
+    dropzone = `${draggableParentId}:${id}`;
+    content = setupDropzone(data, dropzone).dropzones[dropzone];
   }
 
-  const draggedDroppableId = draggedItem && draggedItem.source.droppableId;
+  if (draggedItem) {
+    const draggedParentId = dropzone?.split(":")[0];
 
-  const draggedParentId =
-    draggedItem && draggedItem.source.droppableId.split(":")[0];
+    sharedParent = draggedParentId === draggedDroppableId?.split(":")[0];
 
-  const droppableId = _droppableId || `${draggableParentId}:${id}`;
-
-  const sharedParent = draggedParentId === droppableId.split(":")[0];
-
-  const isDisabled =
-    !sharedParent &&
-    draggedItem &&
-    draggedItem.source.droppableId !== "component-list";
+    isDisabled =
+      !sharedParent && draggedItem.source.droppableId !== "component-list";
+  }
 
   return (
     <DroppableStrictMode
-      droppableId={droppableId}
+      droppableId={dropzone}
       direction={direction}
       isDropDisabled={isDisabled}
     >
@@ -121,7 +103,7 @@ export function DropZone({
             width: snapshot.isDraggingOver ? "100%" : "auto",
             overflow: snapshot.isDraggingOver ? "hidden" : "auto",
           }}
-          id={droppableId}
+          id={dropzone}
         >
           {content?.map &&
             content.map((item, i) => {
@@ -145,10 +127,8 @@ export function DropZone({
                   key={item.props.id}
                   value={{
                     ...ctx,
-                    isChildHovering,
                     setChildHovering,
                     draggableParentId: componentId,
-                    dropzones: item.dropzones,
                   }}
                 >
                   <DraggableComponent
@@ -165,8 +145,7 @@ export function DropZone({
                     onClick={(e) => {
                       setItemSelector({
                         index: i,
-                        parentId: draggableParentId,
-                        dropzone: id,
+                        dropzone,
                       });
                       e.stopPropagation();
                     }}
@@ -179,24 +158,22 @@ export function DropZone({
                       setParentChildHovering && setParentChildHovering(false);
                     }}
                     onDelete={(e) => {
-                      //   const newContent = [...content];
-                      //   newContent.splice(i, 1);
-                      //   setSelectedIndex(null);
-                      //   setContent(newContent);
-                      //   e.stopPropagation();
+                      dispatch({ type: "remove", index: i, dropzone });
+
+                      setItemSelector(null);
+
+                      e.stopPropagation();
                     }}
                     onDuplicate={(e) => {
-                      //   const newData = { ...data };
-                      //   const newItem = {
-                      //     ...newData.content[i],
-                      //     props: {
-                      //       ...newData.content[i].props,
-                      //       id: `${newData.content[i].type}-${new Date().getTime()}`,
-                      //     },
-                      //   };
-                      //   newData.content.splice(i + 1, 0, newItem);
-                      //   setData(newData);
-                      //   e.stopPropagation();
+                      dispatch({
+                        type: "duplicate",
+                        sourceIndex: i,
+                        sourceDropzone: dropzone,
+                      });
+
+                      setItemSelector({ dropzone, index: i + 1 });
+
+                      e.stopPropagation();
                     }}
                   >
                     <div style={{ zoom: 0.75 }}>

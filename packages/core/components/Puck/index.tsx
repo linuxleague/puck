@@ -5,16 +5,15 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useReducer,
   useState,
 } from "react";
 import { DragDropContext, DragStart } from "react-beautiful-dnd";
-import DroppableStrictMode from "../DroppableStrictMode";
-import { DraggableComponent } from "../DraggableComponent";
 import type { Config, Data, Field } from "../../types/Config";
 import { InputOrGroup } from "../InputOrGroup";
 import { ComponentList } from "../ComponentList";
 import { OutlineList } from "../OutlineList";
-import { filter, reorder, replace } from "../../lib";
+import { filter } from "../../lib";
 import { Button } from "../Button";
 
 import { Plugin } from "../../types/Plugin";
@@ -26,10 +25,9 @@ import { Globe, Sidebar } from "react-feather";
 import { Heading } from "../Heading";
 import { IconButton } from "../IconButton/IconButton";
 import { DropZone, DropZoneProvider } from "../DropZone";
-import { remove } from "../../lib/remove";
-import { insert } from "../../lib/insert";
 import { rootDroppableId } from "../../lib/root-droppable-id";
 import { ItemSelector, getItem } from "../../lib/get-item";
+import { PuckAction, StateReducer, createReducer } from "../../lib/reducer";
 
 const Field = () => {};
 
@@ -76,16 +74,18 @@ export function Puck({
   renderHeader?: (props: {
     children: ReactNode;
     data: Data;
-    setData: (data: Data) => void;
+    dispatch: (action: PuckAction) => void;
   }) => ReactElement;
   renderHeaderActions?: (props: {
     data: Data;
-    setData: (data: Data) => void;
+    dispatch: (action: PuckAction) => void;
   }) => ReactElement;
   headerTitle?: string;
   headerPath?: string;
 }) {
-  const [data, setData] = useState(initialData);
+  const [reducer] = useState(() => createReducer({ config }));
+  const [data, dispatch] = useReducer<StateReducer>(reducer, initialData);
+
   const [itemSelector, setItemSelector] = useState<ItemSelector | null>(null);
 
   const selectedItem = itemSelector ? getItem(itemSelector, data) : null;
@@ -173,181 +173,32 @@ export function Puck({
             droppedItem.source.droppableId === "component-list" &&
             droppedItem.destination
           ) {
-            const id = `${droppedItem.draggableId}-${new Date().getTime()}`; // TODO make random string
-            const emptyComponentData = {
-              type: droppedItem.draggableId,
-              props: {
-                ...(config.components[droppedItem.draggableId].defaultProps ||
-                  {}),
-                id,
-              },
-            };
+            dispatch({
+              type: "insert",
+              componentType: droppedItem.draggableId,
+              destinationIndex: droppedItem.destination!.index,
+              destinationDropzone: droppedItem.destination.droppableId,
+            });
 
-            const newData = { ...data };
+            return;
+          } else {
+            const { source, destination } = droppedItem;
 
-            const [destinationParentId, destinationDropzoneKey] =
-              droppedItem.destination.droppableId.split(":");
-
-            if (droppedItem.destination.droppableId === rootDroppableId) {
-              newData.content.splice(
-                droppedItem.destination.index,
-                0,
-                emptyComponentData
-              );
-            } else {
-              newData.content = data.content.map((item) => {
-                const dropzones = item.dropzones || {
-                  [destinationDropzoneKey]: [],
-                };
-
-                const sourceIndex = droppedItem.source.index;
-                const destinationIndex = droppedItem.destination!.index;
-
-                if (item.props.id === destinationParentId) {
-                  return {
-                    ...item,
-                    dropzones: {
-                      ...dropzones,
-                      [destinationDropzoneKey]: insert(
-                        dropzones[destinationDropzoneKey] || [],
-                        destinationIndex,
-                        emptyComponentData
-                      ),
-                    },
-                  };
-                }
-
-                return item;
+            if (source.droppableId === destination.droppableId) {
+              return dispatch({
+                type: "reorder",
+                sourceIndex: source.index,
+                destinationIndex: destination.index,
+                destinationDropzone: destination.droppableId,
               });
             }
 
-            setData(newData);
-
-            setItemSelector({
-              index: droppedItem.destination.index,
-              dropzone: destinationDropzoneKey,
-              parentId: destinationParentId,
-            });
-
-            // Reorder
-          } else if (droppedItem.source.droppableId === rootDroppableId) {
-            setData({
-              ...data,
-              content: reorder(
-                data.content,
-                droppedItem.source.index,
-                droppedItem.destination.index
-              ),
-            });
-
-            setItemSelector(null);
-          } else {
-            const [sourceParentId, sourceDropzoneKey] =
-              droppedItem.source.droppableId.split(":");
-
-            const [destinationParentId, destinationDropzoneKey] =
-              droppedItem.destination.droppableId.split(":");
-
-            const sourceIndex = droppedItem.source.index;
-            const destinationIndex = droppedItem.destination.index;
-
-            let content = [...data.content];
-
-            if (droppedItem.destination.droppableId === rootDroppableId) {
-              content = insert(
-                content,
-                destinationIndex,
-                content.find(
-                  (candidate) => candidate.props.id === sourceParentId
-                )?.dropzones![sourceDropzoneKey][sourceIndex]
-              );
-            }
-
-            content = data.content.map((item) => {
-              // TODO i have no way to identify the prop name in the component
-              // TODO also auto generated droppableIds clash within the same parent
-
-              const dropzones = item.dropzones || { [sourceDropzoneKey]: [] };
-
-              // Reorder within same dropzone
-              if (
-                sourceParentId === destinationParentId &&
-                sourceDropzoneKey === destinationDropzoneKey
-              ) {
-                if (item.props.id === sourceParentId) {
-                  return {
-                    ...item,
-                    dropzones: {
-                      ...dropzones,
-                      [sourceDropzoneKey]: reorder(
-                        dropzones[sourceDropzoneKey],
-                        sourceIndex,
-                        destinationIndex
-                      ),
-                    },
-                  };
-                }
-
-                // Move between dropzones
-              } else {
-                const sourceItem = content.find(
-                  (candidate) => candidate.props.id === sourceParentId
-                )?.dropzones![sourceDropzoneKey][sourceIndex];
-
-                if (
-                  item.props.id === sourceParentId &&
-                  item.props.id === destinationParentId
-                ) {
-                  return {
-                    ...item,
-                    dropzones: {
-                      ...dropzones,
-                      [sourceDropzoneKey]: remove(
-                        dropzones[sourceDropzoneKey],
-                        sourceIndex
-                      ),
-                      [destinationDropzoneKey]: insert(
-                        dropzones[destinationDropzoneKey] || [],
-                        destinationIndex,
-                        sourceItem
-                      ),
-                    },
-                  };
-                } else if (item.props.id === sourceParentId) {
-                  return {
-                    ...item,
-                    dropzones: {
-                      ...dropzones,
-                      [sourceDropzoneKey]: remove(
-                        dropzones[sourceDropzoneKey],
-                        sourceIndex
-                      ),
-                    },
-                  };
-                } else if (
-                  item.props.id === destinationParentId &&
-                  destinationParentId !== rootDroppableId
-                ) {
-                  return {
-                    ...item,
-                    dropzones: {
-                      ...dropzones,
-                      [destinationDropzoneKey]: insert(
-                        dropzones[destinationDropzoneKey] || [],
-                        destinationIndex,
-                        sourceItem
-                      ),
-                    },
-                  };
-                }
-              }
-
-              return item;
-            });
-
-            setData({
-              ...data,
-              content,
+            return dispatch({
+              type: "move",
+              sourceDropzone: source.droppableId,
+              sourceIndex: source.index,
+              destinationIndex: destination.index,
+              destinationDropzone: destination.droppableId,
             });
           }
         }}
@@ -387,7 +238,7 @@ export function Puck({
                   </Button>
                 ),
                 data,
-                setData,
+                dispatch,
               })
             ) : (
               <div
@@ -436,7 +287,7 @@ export function Puck({
                   }}
                 >
                   {renderHeaderActions &&
-                    renderHeaderActions({ data, setData })}
+                    renderHeaderActions({ data, dispatch })}
                   <Button
                     onClick={() => {
                       onPublish(data);
@@ -523,21 +374,15 @@ export function Puck({
                 <DropZoneProvider
                   value={{
                     data,
-                    content: data.content,
                     itemSelector,
                     setItemSelector,
                     config,
-                    setContent: (content) => {
-                      setData({ ...data, content });
-                    },
+                    dispatch,
                     draggedItem,
                     placeholderStyle,
                   }}
                 >
-                  <DropZone
-                    droppableId={rootDroppableId}
-                    content={data.content}
-                  />
+                  <DropZone id={rootDroppableId} />
                 </DropZoneProvider>
               </Page>
             </div>
@@ -606,51 +451,18 @@ export function Puck({
                     }
 
                     if (itemSelector) {
-                      if (itemSelector.parentId && itemSelector.dropzone) {
-                        // TODO simplify once we change dropzone data model
-                        setData({
-                          ...data,
-                          content: data.content.map((parentItem) => {
-                            if (parentItem.props.id === itemSelector.parentId) {
-                              const parentItemDropzones =
-                                parentItem.dropzones || {
-                                  [itemSelector.dropzone!]: [],
-                                };
-
-                              const item = {
-                                ...parentItemDropzones[itemSelector.dropzone!][
-                                  itemSelector.index
-                                ],
-                                props: newProps,
-                              };
-
-                              return {
-                                ...parentItem,
-                                dropzones: {
-                                  ...parentItemDropzones,
-                                  [itemSelector.dropzone!]: replace(
-                                    parentItemDropzones[itemSelector.dropzone!],
-                                    itemSelector.index,
-                                    item
-                                  ),
-                                },
-                              };
-                            }
-
-                            return parentItem;
-                          }),
-                        });
-                      } else {
-                        setData({
-                          ...data,
-                          content: replace(data.content, itemSelector.index, {
-                            ...selectedItem,
-                            props: newProps,
-                          }),
-                        });
-                      }
+                      dispatch({
+                        type: "replace",
+                        destinationIndex: itemSelector.index,
+                        destinationDropzone:
+                          itemSelector.dropzone || rootDroppableId,
+                        data: { ...selectedItem, props: newProps },
+                      });
                     } else {
-                      setData({ ...data, root: newProps });
+                      dispatch({
+                        type: "set",
+                        data: { root: newProps },
+                      });
                     }
                   };
 
@@ -662,9 +474,10 @@ export function Puck({
                         name={fieldName}
                         label={field.label}
                         readOnly={
-                          data.content[
-                            itemSelector.index
-                          ].props._meta?.locked?.indexOf(fieldName) > -1
+                          getItem(
+                            itemSelector,
+                            data
+                          ).props._meta?.locked?.indexOf(fieldName) > -1
                         }
                         value={selectedItem.props[fieldName]}
                         onChange={onChange}
