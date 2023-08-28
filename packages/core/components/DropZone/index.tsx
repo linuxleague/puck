@@ -1,4 +1,10 @@
-import { CSSProperties, createContext, useContext, useState } from "react";
+import {
+  CSSProperties,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { usePlaceholderStyle } from "../../lib/use-placeholder-style";
 import { Config, Content, Data } from "../../types/Config";
 import { DraggableComponent } from "../DraggableComponent";
@@ -38,10 +44,6 @@ export function DropZone({
   const [hoveringIndex, setHoveringIndex] = useState<number | undefined>();
   const [isChildHovering, setChildHovering] = useState(false);
 
-  if (!ctx?.config) {
-    return <div>DropZone requires context to work.</div>;
-  }
-
   const {
     // These all need setting via context
     data,
@@ -53,7 +55,11 @@ export function DropZone({
     draggableParentId,
     draggedItem,
     placeholderStyle,
-  } = ctx;
+  } = ctx! || {};
+
+  if (!ctx?.config) {
+    return <div>DropZone requires context to work.</div>;
+  }
 
   const draggedDroppableId = draggedItem && draggedItem.source.droppableId;
   let content = data.content;
@@ -66,6 +72,9 @@ export function DropZone({
     content = setupDropzone(data, dropzone).dropzones[dropzone];
   }
 
+  const item = itemSelector ? getItem(itemSelector, data) : null;
+  const isParentSelected = item?.props.id === draggableParentId;
+
   if (draggedItem) {
     const draggedParentId = dropzone?.split(":")[0];
 
@@ -73,6 +82,12 @@ export function DropZone({
 
     isDisabled =
       !sharedParent && draggedItem.source.droppableId !== "component-list";
+
+    if (draggedItem.source.droppableId === "component-list") {
+      if (!isParentSelected) {
+        isDisabled = true;
+      }
+    }
   }
 
   return (
@@ -93,10 +108,14 @@ export function DropZone({
             minHeight: 64,
             height: "100%",
             outline:
-              snapshot.isDraggingOver || sharedParent ? "3px dashed" : "",
+              snapshot.isDraggingOver ||
+              sharedParent ||
+              (item && isParentSelected)
+                ? "3px dashed"
+                : "",
             outlineColor: snapshot.isDraggingOver
               ? "var(--puck-color-azure-3)"
-              : sharedParent
+              : sharedParent || isParentSelected
               ? "var(--puck-color-azure-7)"
               : "none",
             outlineOffset: -3,
