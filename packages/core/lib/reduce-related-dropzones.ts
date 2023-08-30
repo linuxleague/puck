@@ -87,7 +87,7 @@ export const duplicateRelatedDropzones = (
   return reduceRelatedDropzones(item, data, (acc, key, dropzone) => {
     const dupedDropzone = dropzone.map((dropzoneItem) => ({
       ...dropzoneItem,
-      props: { ...dropzoneItem, id: generateId(dropzoneItem.type) },
+      props: { ...dropzoneItem.props, id: generateId(dropzoneItem.type) },
     }));
 
     // We need to dupe any related items in our dupes

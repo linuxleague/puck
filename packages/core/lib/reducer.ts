@@ -145,7 +145,7 @@ export const createReducer =
           ...dataWithRelatedDuplicated.dropzones,
           [action.sourceDropzone]: insert(
             dataWithRelatedDuplicated.dropzones[action.sourceDropzone],
-            action.sourceIndex,
+            action.sourceIndex + 1,
             newItem
           ),
         },
