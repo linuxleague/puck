@@ -353,20 +353,20 @@ export function Puck({
           </div>
           <div
             style={{
-              background: "var(--puck-color-grey-9)",
+              background: "var(--puck-color-grey-10)",
               padding: 32,
               overflowY: "auto",
               gridArea: "editor",
+              position: "relative",
             }}
             onClick={() => setItemSelector(null)}
+            id="puck-frame"
           >
             <div
               className="puck-root"
               style={{
                 background: "white",
-                borderRadius: 16,
                 border: "1px solid var(--puck-color-grey-8)",
-                overflow: "hidden",
                 zoom: 0.75,
               }}
             >

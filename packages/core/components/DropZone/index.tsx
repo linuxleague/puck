@@ -5,11 +5,9 @@ import {
   useEffect,
   useState,
 } from "react";
-import { usePlaceholderStyle } from "../../lib/use-placeholder-style";
-import { Config, Content, Data } from "../../types/Config";
+import { Config, Data } from "../../types/Config";
 import { DraggableComponent } from "../DraggableComponent";
 import DroppableStrictMode from "../DroppableStrictMode";
-import { Button } from "../Button";
 import { DragStart } from "react-beautiful-dnd";
 import { ItemSelector, getItem } from "../../lib/get-item";
 import { PuckAction } from "../../lib/reducer";
@@ -103,24 +101,28 @@ export function DropZone({
           style={{
             ...style,
             zoom: 1.33,
-            zIndex: 1,
             position: "relative",
-            minHeight: 64,
+            minHeight: 128,
             height: "100%",
+            background:
+              snapshot.isDraggingOver ||
+              sharedParent ||
+              (item && isParentSelected)
+                ? "var(--puck-color-azure-9)"
+                : "",
             outline:
               snapshot.isDraggingOver ||
               sharedParent ||
               (item && isParentSelected)
-                ? "3px dashed"
+                ? "2px dashed"
                 : "",
             outlineColor: snapshot.isDraggingOver
               ? "var(--puck-color-azure-3)"
               : sharedParent || isParentSelected
               ? "var(--puck-color-azure-7)"
               : "none",
-            outlineOffset: -3,
+            outlineOffset: -1,
             width: snapshot.isDraggingOver ? "100%" : "auto",
-            overflow: snapshot.isDraggingOver ? "hidden" : "auto",
           }}
           id={dropzone}
         >
@@ -219,54 +221,6 @@ export function DropZone({
               }}
             />
           )}
-          {/* <Button
-            onMouseOver={() =>
-              setParentChildHovering && setParentChildHovering(true)
-            }
-            onMouseOut={() =>
-              setParentChildHovering && setParentChildHovering(false)
-            }
-            onClick={() => {
-              console.log(draggableParentId, id, ctx.content);
-
-              if (!ctx.content) return;
-
-              if (draggableParentId && id && ctx.content) {
-                setContent([
-                  ...ctx.content?.map((item) => {
-                    if (item.props.id === draggableParentId) {
-                      return {
-                        ...item,
-                        dropzones: {
-                          ...(item.dropzones || {}),
-                          [id]: [
-                            ...(item.dropzones ? item.dropzones[id] || [] : []),
-                            {
-                              type: "Text",
-                              props: {
-                                text: "Text " + Math.random(),
-                                id: new Date().getTime(),
-                              },
-                            },
-                          ],
-                        },
-                      };
-                    }
-
-                    return { ...item };
-                  }),
-                ]);
-              } else {
-                setContent([
-                  ...ctx.content,
-                  { type: "Text", props: { text: "Text" } },
-                ]);
-              }
-            }}
-            variant="secondary"
-          >
-            Add Text block
-          </Button> */}
         </div>
       )}
     </DroppableStrictMode>

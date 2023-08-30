@@ -54,10 +54,12 @@ export const DraggableComponent = ({
             isSelected,
             isModifierHeld,
             isDragging: snapshot.isDragging,
+            isHovering,
           })}
           style={{
             ...provided.draggableProps.style,
             cursor: isModifierHeld ? "initial" : "grab",
+            zIndex: snapshot.isDragging ? 10 : 0,
           }}
           onMouseOver={onMouseOver}
           onMouseOut={onMouseOut}
@@ -77,10 +79,10 @@ export const DraggableComponent = ({
                   className={getClassName("action")}
                   onClick={onDuplicate}
                 >
-                  <Copy />
+                  <Copy size={16} />
                 </button>
                 <button className={getClassName("action")} onClick={onDelete}>
-                  <Trash />
+                  <Trash size={16} />
                 </button>
               </div>
             </div>
