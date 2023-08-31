@@ -60,6 +60,7 @@ export const DraggableComponent = ({
             ...provided.draggableProps.style,
             cursor: isModifierHeld ? "initial" : "grab",
             zIndex: snapshot.isDragging ? 10 : 0,
+            pointerEvents: "all",
           }}
           onMouseOver={onMouseOver}
           onMouseOut={onMouseOut}
