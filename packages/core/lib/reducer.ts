@@ -116,7 +116,7 @@ export const createReducer =
       const item = getItem(
         { index: action.sourceIndex, dropzone: action.sourceDropzone },
         data
-      );
+      )!;
 
       const newItem = {
         ...item,
@@ -231,7 +231,7 @@ export const createReducer =
       const item = getItem(
         { index: action.index, dropzone: action.dropzone },
         data
-      );
+      )!;
 
       // Remove any related dropzones
       const dataWithRelatedRemoved = setupDropzone(

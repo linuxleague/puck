@@ -158,6 +158,7 @@ export function Puck({
       <DragDropContext
         onDragUpdate={onDragUpdate}
         onDragStart={(start) => {
+          setItemSelector(null);
           setDraggedItem(start);
         }}
         onDragEnd={(droppedItem) => {
@@ -180,25 +181,35 @@ export function Puck({
               destinationDropzone: droppedItem.destination.droppableId,
             });
 
+            setItemSelector({
+              index: droppedItem.destination!.index,
+              dropzone: droppedItem.destination.droppableId,
+            });
+
             return;
           } else {
             const { source, destination } = droppedItem;
 
             if (source.droppableId === destination.droppableId) {
-              return dispatch({
+              dispatch({
                 type: "reorder",
+                sourceIndex: source.index,
+                destinationIndex: destination.index,
+                destinationDropzone: destination.droppableId,
+              });
+            } else {
+              dispatch({
+                type: "move",
+                sourceDropzone: source.droppableId,
                 sourceIndex: source.index,
                 destinationIndex: destination.index,
                 destinationDropzone: destination.droppableId,
               });
             }
 
-            return dispatch({
-              type: "move",
-              sourceDropzone: source.droppableId,
-              sourceIndex: source.index,
-              destinationIndex: destination.index,
-              destinationDropzone: destination.droppableId,
+            setItemSelector({
+              index: destination.index,
+              dropzone: destination.droppableId,
             });
           }
         }}
@@ -477,7 +488,7 @@ export function Puck({
                           getItem(
                             itemSelector,
                             data
-                          ).props._meta?.locked?.indexOf(fieldName) > -1
+                          )!.props._meta?.locked?.indexOf(fieldName) > -1
                         }
                         value={selectedItem.props[fieldName]}
                         onChange={onChange}

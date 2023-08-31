@@ -10,7 +10,7 @@ export type ItemSelector = {
 export const getItem = (
   selector: ItemSelector,
   data: Data
-): Data["content"][0] => {
+): Data["content"][0] | undefined => {
   if (!selector.dropzone || selector.dropzone === rootDroppableId) {
     return data.content[selector.index];
   }
