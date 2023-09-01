@@ -1,0 +1,11 @@
+.DropZone-item {
+  position: relative;
+}
+
+.DropZone-hitbox {
+  position: absolute;
+  bottom: -12px;
+  height: 24px;
+  width: 100%;
+  z-index: 1;
+}
