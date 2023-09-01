@@ -1,4 +1,4 @@
-import { ReactNode, SyntheticEvent } from "react";
+import { CSSProperties, ReactNode, SyntheticEvent } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import styles from "./styles.module.css";
 import getClassNameFactory from "../../lib/get-class-name-factory";
@@ -21,6 +21,7 @@ export const DraggableComponent = ({
   label,
   isHovering = false,
   isDragDisabled,
+  style,
 }: {
   children: ReactNode;
   id: string;
@@ -35,6 +36,7 @@ export const DraggableComponent = ({
   label?: string;
   isHovering: boolean;
   isDragDisabled?: boolean;
+  style?: CSSProperties;
 }) => {
   const isModifierHeld = useModifierHeld("Alt");
 
@@ -57,10 +59,10 @@ export const DraggableComponent = ({
             isHovering,
           })}
           style={{
+            ...style,
             ...provided.draggableProps.style,
             cursor: isModifierHeld ? "initial" : "grab",
             zIndex: snapshot.isDragging ? 10 : 0,
-            pointerEvents: "all",
           }}
           onMouseOver={onMouseOver}
           onMouseOut={onMouseOut}

@@ -74,6 +74,7 @@ export function DropZone({
   let content = data.content;
   let dropzone = rootDroppableId;
   let isDisabled = false;
+  let isInteractionDisabled = false;
   let sharedParent = false;
 
   if (draggableParentId && id) {
@@ -96,7 +97,7 @@ export function DropZone({
     ? draggedSourceId?.split(":")
     : "";
 
-  const selfHovering = deepestHoverParentId === dropzoneParentId;
+  const deepestHoverIsSelf = deepestHoverParentId === dropzoneParentId;
 
   const isDraggingOver = !!draggedItem;
 
@@ -125,7 +126,7 @@ export function DropZone({
       }
     }
 
-    if (selfHovering) {
+    if (deepestHoverIsSelf) {
       ctxSetHoveringItemId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,14 +135,18 @@ export function DropZone({
   const item = itemSelector ? getItem(itemSelector, data) : null;
   const isParentSelected = item?.props.id === draggableParentId;
 
+  const [isHovering, setIsHovering] = useState(false);
+
+  const draggingNewComponent =
+    draggedItem?.source.droppableId === "component-list";
+
   if (isDraggingOver) {
     sharedParent = dropzoneParentId === draggedSourceParentId;
 
-    isDisabled =
-      !sharedParent && draggedItem.source.droppableId !== "component-list";
+    isDisabled = !sharedParent && !draggingNewComponent;
 
-    if (draggedItem.source.droppableId === "component-list") {
-      isDisabled = !selfHovering;
+    if (draggingNewComponent) {
+      isDisabled = !deepestHoverIsSelf;
 
       if (
         resolvedHoveringItemId
@@ -149,6 +154,12 @@ export function DropZone({
           : false
       ) {
         isDisabled = true;
+      }
+    } else {
+      if (!sharedParent) {
+        isInteractionDisabled = true;
+      } else if (!isHovering) {
+        isInteractionDisabled = true;
       }
     }
   }
@@ -158,13 +169,18 @@ export function DropZone({
   }
 
   const onMouseOver = (event) => {
-    event.stopPropagation();
+    if (!isDisabled || draggingNewComponent) {
+      event.stopPropagation();
+    }
+
+    setIsHovering(true);
     setDeepestHoverId(dropzone);
     if (ctx.setDeepestHoverId) ctx.setDeepestHoverId(dropzone);
   };
 
   const onMouseOut = () => {
     setDeepestHoverId(rootDroppableId);
+    setIsHovering(false);
     if (ctx.setDeepestHoverId) ctx.setDeepestHoverId(rootDroppableId);
   };
 
@@ -172,18 +188,18 @@ export function DropZone({
     <DroppableStrictMode
       droppableId={dropzone}
       direction={direction}
-      isDropDisabled={isDisabled}
+      isDropDisabled={isDisabled || isInteractionDisabled}
     >
       {(provided, snapshot) => {
         let dropzoneVisible = false;
 
         if (!isRootDropzone) {
-          if (!isDisabled || draggedSourceParentId === "component-list") {
+          if (!isDisabled) {
             if (snapshot.isDraggingOver) {
               dropzoneVisible = true;
             } else if (sharedParent) {
               dropzoneVisible = true;
-            } else if (selfHovering) {
+            } else if (deepestHoverIsSelf) {
               dropzoneVisible = true;
             } else if (parentHovering) {
               dropzoneVisible = true;
@@ -195,11 +211,13 @@ export function DropZone({
 
         return (
           <div
+            className={getClassName()}
             {...(provided || { droppableProps: {} }).droppableProps}
             ref={provided?.innerRef}
-            className={getClassName()}
             style={{
               ...style,
+              marginLeft: "auto",
+              marginRight: "auto",
               zoom: 1.33,
               position: "relative",
               minHeight: 128,
@@ -211,7 +229,7 @@ export function DropZone({
                   })`
                 : "",
               outlineOffset: -1,
-              width: snapshot.isDraggingOver ? "100%" : "auto",
+              width: "100%",
             }}
             id={dropzone}
             onMouseOver={onMouseOver}
@@ -222,7 +240,7 @@ export function DropZone({
                 const componentId = item.props.id;
 
                 const defaultedProps = {
-                  ...config.components[item.type].defaultProps,
+                  ...config.components[item.type]?.defaultProps,
                   ...item.props,
                   editMode: true,
                 };
@@ -240,13 +258,15 @@ export function DropZone({
                   isHovering = true;
                 } else if (
                   isDraggingOver &&
-                  componentId === resolvedHoveringItemId
+                  componentId === resolvedHoveringItemId &&
+                  componentId === deepestHoverParentId
                 ) {
+                  // TODO this is triggering when it shouldn't.
                   isHovering = true;
                 } else if (componentId === deepestHoverParentId) {
                   if (isDraggingOver) {
                     if (
-                      draggedSourceParentId === "component-list" ||
+                      draggingNewComponent ||
                       draggedSourceParentId === componentId
                     ) {
                       isHovering = true;
@@ -308,6 +328,9 @@ export function DropZone({
                           setItemSelector({ dropzone, index: i + 1 });
 
                           e.stopPropagation();
+                        }}
+                        style={{
+                          pointerEvents: draggingNewComponent ? "all" : "unset",
                         }}
                       >
                         <div style={{ zoom: 0.75 }}>
