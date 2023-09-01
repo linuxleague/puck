@@ -205,6 +205,22 @@ export const createReducer =
           },
         };
       }
+
+      return {
+        ...newData,
+        dropzones: {
+          ...newData.dropzones,
+          [action.sourceDropzone]: remove(
+            newData.dropzones[action.sourceDropzone],
+            action.sourceIndex
+          ),
+          [action.destinationDropzone]: insert(
+            newData.dropzones[action.destinationDropzone],
+            action.destinationIndex,
+            item
+          ),
+        },
+      };
     }
 
     if (action.type === "replace") {
