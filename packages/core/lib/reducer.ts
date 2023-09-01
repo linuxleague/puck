@@ -185,23 +185,26 @@ export const createReducer =
         action.destinationDropzone
       );
 
-      const item = newData.dropzones[action.sourceDropzone][action.sourceIndex];
+      const item = getItem(
+        { dropzone: action.sourceDropzone, index: action.sourceIndex },
+        newData
+      );
 
-      return {
-        ...newData,
-        dropzones: {
-          ...newData.dropzones,
-          [action.sourceDropzone]: remove(
-            newData.dropzones[action.sourceDropzone],
-            action.sourceIndex
-          ),
-          [action.destinationDropzone]: insert(
-            newData.dropzones[action.destinationDropzone],
-            action.destinationIndex,
-            item
-          ),
-        },
-      };
+      if (action.sourceDropzone === rootDroppableId) {
+        return {
+          ...newData,
+          content: remove(newData.content, action.sourceIndex),
+          dropzones: {
+            ...newData.dropzones,
+
+            [action.destinationDropzone]: insert(
+              newData.dropzones[action.destinationDropzone],
+              action.destinationIndex,
+              item
+            ),
+          },
+        };
+      }
     }
 
     if (action.type === "replace") {
