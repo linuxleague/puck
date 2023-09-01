@@ -57,17 +57,10 @@ export type Content<
 
 export type ComponentConfig<
   ComponentProps extends DefaultComponentProps = DefaultComponentProps,
-  DefaultProps = ComponentProps,
-  AllProps extends { [key: string]: any } = { [key: string]: any }
+  DefaultProps = ComponentProps
 > = {
   render: (props: ComponentProps) => ReactElement;
-  defaultProps?: {
-    // Swap "ReactNode" out with Content
-    [PropName in keyof DefaultProps]: DefaultProps[PropName] extends ReactNode
-      ? Content<AllProps>
-      : DefaultProps[PropName];
-  };
-  // defaultProps?: DefaultProps;
+  defaultProps?: DefaultProps;
   fields?: Fields<ComponentProps>;
 };
 
@@ -78,14 +71,12 @@ export type Config<
   components: {
     [ComponentName in keyof Props]: ComponentConfig<
       Props[ComponentName],
-      Props[ComponentName],
-      Props
+      Props[ComponentName]
     >;
   };
   root?: ComponentConfig<
     RootProps & { children: ReactNode },
-    Partial<RootProps & { children: ReactNode }>,
-    Props
+    Partial<RootProps & { children: ReactNode }>
   >;
 };
 
