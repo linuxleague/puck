@@ -3,6 +3,8 @@
 }
 
 .DraggableComponent--isDragging {
+  background: #abc7e510;
+  outline: 2px var(--puck-color-azure-8) solid;
   overflow: hidden;
 }
 
