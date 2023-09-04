@@ -1,5 +1,6 @@
 .DraggableComponent {
   position: relative;
+  pointer-events: auto;
 }
 
 .DraggableComponent--isDragging {
@@ -10,6 +11,7 @@
 
 .DraggableComponent-contents {
   position: relative; /* Reset stacking context */
+  pointer-events: none;
 }
 
 /* Prevent margin collapsing  */
@@ -20,7 +22,7 @@
 }
 
 .DraggableComponent-overlay {
-  display: block;
+  display: none;
   background: #abc7e510;
   outline: 2px var(--puck-color-azure-8) solid;
   cursor: pointer;
@@ -34,10 +36,22 @@
   box-sizing: border-box;
 }
 
-.DraggableComponent--isSelected .DraggableComponent-overlay {
-  background: none;
-  outline: 2px var(--puck-color-azure-6) solid;
+.DraggableComponent:hover:not(.DraggableComponent--isLocked)
+  > .DraggableComponent-overlay {
   display: block;
+  pointer-events: none;
+}
+
+/* Won't work in FF */
+.DraggableComponent:has(.DraggableComponent:hover > .DraggableComponent-overlay)
+  > .DraggableComponent-overlay {
+  display: none;
+}
+
+.DraggableComponent--isSelected > .DraggableComponent-overlay {
+  background: none;
+  display: block;
+  outline: 2px var(--puck-color-azure-6) solid;
 }
 
 .DraggableComponent-actions {
@@ -51,10 +65,14 @@
   border-radius: 8px;
   background: var(--puck-color-grey-0);
   color: white;
-  display: flex;
+  display: none;
   gap: 4px;
   pointer-events: auto;
   box-sizing: border-box;
+}
+
+.DraggableComponent--isSelected .DraggableComponent-actions {
+  display: flex;
 }
 
 .DraggableComponent-actionsLabel {

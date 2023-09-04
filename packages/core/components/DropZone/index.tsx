@@ -1,41 +1,16 @@
-import {
-  CSSProperties,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { Config, Data } from "../../types/Config";
+import { CSSProperties, useContext } from "react";
 import { DraggableComponent } from "../DraggableComponent";
 import DroppableStrictMode from "../DroppableStrictMode";
-import { DragStart } from "react-beautiful-dnd";
-import { ItemSelector, getItem } from "../../lib/get-item";
-import { PuckAction } from "../../lib/reducer";
+import { getItem } from "../../lib/get-item";
 import { setupDropzone } from "../../lib/setup-dropzone";
 import { rootDroppableId } from "../../lib/root-droppable-id";
 import { getClassNameFactory } from "../../lib";
 import styles from "./styles.module.css";
+import { DropZoneProvider, dropZoneContext } from "./context";
 
 const getClassName = getClassNameFactory("DropZone", styles);
 
-const dropZoneContext = createContext<{
-  data: Data;
-  config: Config;
-  itemSelector: ItemSelector | null;
-  setItemSelector: (newIndex: ItemSelector | null) => void;
-  dispatch: (action: PuckAction) => void;
-  setChildDropzoneItemHovering?: (isHovering: boolean) => void;
-  draggableParentId?: string;
-  draggedItem?: DragStart;
-  placeholderStyle?: CSSProperties;
-  deepestHoverId?: string;
-  setDeepestHoverId?: (id: string) => void;
-  parentHovering?: boolean;
-  hovingItemId?: string | null;
-  setHoveringItemId?: (id: string | null) => void;
-} | null>(null);
-
-export const DropZoneProvider = dropZoneContext.Provider;
+export { DropZoneProvider } from "./context";
 
 export function DropZone({
   id,
@@ -55,319 +30,221 @@ export function DropZone({
     config,
     itemSelector,
     setItemSelector,
-    draggableParentId,
+    areaId,
     draggedItem,
     placeholderStyle,
-    parentHovering = false,
   } = ctx! || {};
-
-  // Refers to dropzone. Only gets set on root. Could move outside of DropZone component.
-  const [deepestHoverId, setDeepestHoverId] = useState(rootDroppableId);
-
-  // These refer to items inside dropzones
-  const [hoveringItemIndex, setHoveringItemIndex] = useState<
-    number | undefined
-  >();
-  // Only gets set if the item contains a dropzone
-  const [hovingItemId, setHoveringItemId] = useState<string | null>();
 
   let content = data.content;
   let dropzone = rootDroppableId;
-  let isDisabled = false;
-  let isInteractionDisabled = false;
-  let sharedParent = false;
 
-  if (draggableParentId && id) {
-    dropzone = `${draggableParentId}:${id}`;
+  if (areaId && id) {
+    dropzone = `${areaId}:${id}`;
     content = setupDropzone(data, dropzone).dropzones[dropzone];
   }
 
   const isRootDropzone = dropzone === rootDroppableId;
 
-  const resolvedDeepestHover =
-    ctx?.deepestHoverId || deepestHoverId || rootDroppableId;
-  const resolvedHoveringItemId = ctx?.hovingItemId || hovingItemId || null;
-
   const draggedSourceId = draggedItem && draggedItem.source.droppableId;
-
-  // Parent IDs
-  const [dropzoneParentId] = dropzone.split(":");
-  const [deepestHoverParentId] = resolvedDeepestHover.split(":");
-  const [draggedSourceParentId] = draggedSourceId
+  const draggedDestinationId =
+    draggedItem && draggedItem.destination?.droppableId;
+  const [dropzoneArea] = dropzone.split(":");
+  const [draggedSourceArea] = draggedSourceId
     ? draggedSourceId?.split(":")
     : "";
 
-  const deepestHoverIsSelf = deepestHoverParentId === dropzoneParentId;
+  const userIsDragging = !!draggedItem;
+  const draggingOverArea = userIsDragging && dropzoneArea === draggedSourceArea;
+  const draggingNewComponent = draggedSourceId === "component-list";
 
-  const isDraggingOver = !!draggedItem;
-
-  const ctxSetHoveringItemId = ctx?.setHoveringItemId || setHoveringItemId;
-
-  useEffect(() => {
-    if (typeof hoveringItemIndex !== "undefined") {
-      // check if current item has any dropzones
-      const currentItem = getItem(
-        { dropzone, index: hoveringItemIndex! },
-        data
-      );
-
-      if (currentItem) {
-        const itemContainsNestedDropzones = !!Object.keys(
-          ctx?.data.dropzones || {}
-        ).find(
-          (dropzoneKey) => dropzoneKey.split(":")[0] === currentItem.props.id
-        );
-
-        if (itemContainsNestedDropzones) {
-          ctxSetHoveringItemId(currentItem.props.id);
-
-          return;
-        }
-      }
-    }
-
-    if (deepestHoverIsSelf) {
-      ctxSetHoveringItemId(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveringItemIndex, data, ctxSetHoveringItemId]);
-
-  const item = itemSelector ? getItem(itemSelector, data) : null;
-  const isParentSelected = item?.props.id === draggableParentId;
-
-  const [isHovering, setIsHovering] = useState(false);
-
-  const draggingNewComponent =
-    draggedItem?.source.droppableId === "component-list";
-
-  if (isDraggingOver) {
-    sharedParent = dropzoneParentId === draggedSourceParentId;
-
-    isDisabled = !sharedParent && !draggingNewComponent;
-
-    if (draggingNewComponent) {
-      isDisabled = !deepestHoverIsSelf;
-
-      if (
-        resolvedHoveringItemId
-          ? resolvedHoveringItemId !== dropzoneParentId
-          : false
-      ) {
-        isDisabled = true;
-      }
-    } else {
-      if (!sharedParent) {
-        isInteractionDisabled = true;
-      } else if (!isHovering) {
-        isInteractionDisabled = true;
-      }
-    }
-  }
-
-  if (!ctx?.config) {
+  if (!ctx?.config || !ctx.setHoveringArea || !ctx.setHoveringDropzone) {
     return <div>DropZone requires context to work.</div>;
   }
 
-  const onMouseOver = (event) => {
-    if (!isDisabled || draggingNewComponent) {
-      event.stopPropagation();
+  const {
+    hoveringArea,
+    setHoveringArea,
+    hoveringDropzone,
+    setHoveringDropzone,
+  } = ctx;
+
+  const hoveringOverArea = hoveringArea
+    ? hoveringArea === dropzoneArea
+    : isRootDropzone;
+  const hoveringOverDropzone = hoveringDropzone === dropzone;
+
+  let isEnabled = true;
+
+  /**
+   * We enable dropzones when:
+   *
+   * 1. This is a new component and the user is dragging over the area. This
+   *    check prevents flickering if you move cursor outside of dropzone
+   *    but within the area
+   * 2. This is an existing component and the user a) is dragging over the
+   *    area (which prevents drags between dropzone areas, breaking the rules
+   *    of react-beautiful-dnd) and b) has the cursor hovering directly over
+   *    the specific dropzone (which increases robustness when using flex
+   *    layouts)
+   */
+  if (userIsDragging) {
+    if (draggingNewComponent) {
+      isEnabled = hoveringOverArea;
+    } else {
+      isEnabled = draggingOverArea && hoveringOverDropzone;
     }
+  }
 
-    setIsHovering(true);
-    setDeepestHoverId(dropzone);
-    if (ctx.setDeepestHoverId) ctx.setDeepestHoverId(dropzone);
-  };
-
-  const onMouseOut = () => {
-    setDeepestHoverId(rootDroppableId);
-    setIsHovering(false);
-    if (ctx.setDeepestHoverId) ctx.setDeepestHoverId(rootDroppableId);
-  };
+  const selectedItem = itemSelector ? getItem(itemSelector, data) : null;
+  const isAreaSelected = selectedItem && dropzoneArea === selectedItem.props.id;
 
   return (
-    <DroppableStrictMode
-      droppableId={dropzone}
-      direction={direction}
-      isDropDisabled={isDisabled || isInteractionDisabled}
+    <div
+      className={getClassName({
+        isRootDropzone,
+        userIsDragging,
+        draggingOverArea,
+        hoveringOverArea,
+        draggingNewComponent,
+        isDestination: draggedDestinationId === dropzone,
+        isDisabled: !isEnabled,
+        isAreaSelected,
+      })}
     >
-      {(provided, snapshot) => {
-        let dropzoneVisible = false;
+      <DroppableStrictMode
+        droppableId={dropzone}
+        direction={direction}
+        isDropDisabled={!isEnabled}
+      >
+        {(provided, snapshot) => {
+          return (
+            <div
+              {...(provided || { droppableProps: {} }).droppableProps}
+              className={getClassName("content")}
+              ref={provided?.innerRef}
+              style={style}
+              id={dropzone}
+              onMouseOver={(e) => {
+                e.stopPropagation();
+                setHoveringArea(dropzoneArea);
+                setHoveringDropzone(dropzone);
+              }}
+            >
+              {content?.map &&
+                content.map((item, i) => {
+                  const componentId = item.props.id;
 
-        if (!isRootDropzone) {
-          if (!isDisabled) {
-            if (snapshot.isDraggingOver) {
-              dropzoneVisible = true;
-            } else if (sharedParent) {
-              dropzoneVisible = true;
-            } else if (deepestHoverIsSelf) {
-              dropzoneVisible = true;
-            } else if (parentHovering) {
-              dropzoneVisible = true;
-            } else if (isParentSelected) {
-              dropzoneVisible = true;
-            }
-          }
-        }
+                  const defaultedProps = {
+                    ...config.components[item.type]?.defaultProps,
+                    ...item.props,
+                    editMode: true,
+                  };
 
-        return (
-          <div
-            className={getClassName()}
-            {...(provided || { droppableProps: {} }).droppableProps}
-            ref={provided?.innerRef}
-            style={{
-              ...style,
-              marginLeft: "auto",
-              marginRight: "auto",
-              zoom: 1.33,
-              position: "relative",
-              minHeight: 128,
-              height: "100%",
-              background: dropzoneVisible ? "var(--puck-color-azure-9)" : "",
-              outline: dropzoneVisible
-                ? `2px dashed var(--puck-color-azure-${
-                    snapshot.isDraggingOver ? "3" : "7"
-                  })`
-                : "",
-              outlineOffset: -1,
-              width: "100%",
-            }}
-            id={dropzone}
-            onMouseOver={onMouseOver}
-            onMouseOut={onMouseOut}
-          >
-            {content?.map &&
-              content.map((item, i) => {
-                const componentId = item.props.id;
+                  const props = defaultedProps;
 
-                const defaultedProps = {
-                  ...config.components[item.type]?.defaultProps,
-                  ...item.props,
-                  editMode: true,
-                };
+                  const isSelected =
+                    selectedItem?.props.id === componentId || false;
 
-                const props = defaultedProps;
+                  const containsDropzone = !!Object.keys(
+                    ctx?.data.dropzones || {}
+                  ).find(
+                    (dropzoneKey) => dropzoneKey.split(":")[0] === componentId
+                  );
 
-                const isSelected =
-                  (itemSelector &&
-                    getItem(itemSelector, data)?.props.id === componentId) ||
-                  false;
-
-                let isHovering = false;
-
-                if (hoveringItemIndex === i && !isDraggingOver) {
-                  isHovering = true;
-                } else if (
-                  isDraggingOver &&
-                  componentId === resolvedHoveringItemId &&
-                  componentId === deepestHoverParentId
-                ) {
-                  // TODO this is triggering when it shouldn't.
-                  isHovering = true;
-                } else if (componentId === deepestHoverParentId) {
-                  if (isDraggingOver) {
-                    if (
-                      draggingNewComponent ||
-                      draggedSourceParentId === componentId
-                    ) {
-                      isHovering = true;
-                    }
-                  } else {
-                    isHovering = true;
-                  }
-                }
-
-                return (
-                  <div key={item.props.id} className={getClassName("item")}>
-                    <DropZoneProvider
-                      value={{
-                        ...ctx,
-                        draggableParentId: componentId,
-                        setDeepestHoverId:
-                          ctx.setDeepestHoverId || setDeepestHoverId,
-                        deepestHoverId: ctx.deepestHoverId || deepestHoverId,
-                        setHoveringItemId:
-                          ctx.setHoveringItemId || setHoveringItemId,
-                        hovingItemId: ctx.hovingItemId || hovingItemId,
-                        parentHovering: i === hoveringItemIndex,
-                      }}
-                    >
-                      <DraggableComponent
-                        isDragDisabled={isDisabled}
-                        label={item.type.toString()}
-                        id={`draggable-${componentId}`}
-                        index={i}
-                        isSelected={isSelected}
-                        isHovering={isHovering}
-                        onClick={(e) => {
-                          setItemSelector({
-                            index: i,
-                            dropzone,
-                          });
-                          e.stopPropagation();
-                        }}
-                        onMouseOver={() => {
-                          setHoveringItemIndex(i);
-                        }}
-                        onMouseOut={() => {
-                          setHoveringItemIndex(undefined);
-                        }}
-                        onDelete={(e) => {
-                          dispatch({ type: "remove", index: i, dropzone });
-
-                          setItemSelector(null);
-
-                          e.stopPropagation();
-                        }}
-                        onDuplicate={(e) => {
-                          dispatch({
-                            type: "duplicate",
-                            sourceIndex: i,
-                            sourceDropzone: dropzone,
-                          });
-
-                          setItemSelector({ dropzone, index: i + 1 });
-
-                          e.stopPropagation();
-                        }}
-                        style={{
-                          pointerEvents: draggingNewComponent ? "all" : "unset",
+                  return (
+                    <div key={item.props.id} className={getClassName("item")}>
+                      <DropZoneProvider
+                        value={{
+                          ...ctx,
+                          areaId: componentId,
                         }}
                       >
-                        <div style={{ zoom: 0.75 }}>
-                          {config.components[item.type] ? (
-                            config.components[item.type].render(props)
-                          ) : (
-                            <div style={{ padding: 48, textAlign: "center" }}>
-                              No configuration for {item.type}
-                            </div>
-                          )}
-                        </div>
-                      </DraggableComponent>
-                    </DropZoneProvider>
-                    {isDraggingOver && (
-                      <div
-                        className={getClassName("hitbox")}
-                        onMouseOver={onMouseOver}
-                        onMouseOut={onMouseOut}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            {provided?.placeholder}
-            {snapshot?.isDraggingOver && (
-              <div
-                style={{
-                  ...placeholderStyle,
-                  background: "var(--puck-color-azure-4)",
-                  opacity: 0.3,
-                  zIndex: 0,
-                }}
-              />
-            )}
-          </div>
-        );
-      }}
-    </DroppableStrictMode>
+                        <DraggableComponent
+                          label={item.type.toString()}
+                          id={`draggable-${componentId}`}
+                          index={i}
+                          isSelected={isSelected}
+                          isLocked={userIsDragging}
+                          onClick={(e) => {
+                            setItemSelector({
+                              index: i,
+                              dropzone,
+                            });
+                            e.stopPropagation();
+                          }}
+                          onMouseOver={(e) => {
+                            e.stopPropagation();
+
+                            if (containsDropzone) {
+                              setHoveringArea(componentId);
+                            } else {
+                              setHoveringArea(dropzoneArea);
+                            }
+
+                            setHoveringDropzone(dropzone);
+                          }}
+                          onMouseOut={() => {
+                            setHoveringArea(null);
+                            setHoveringDropzone(null);
+                          }}
+                          onDelete={(e) => {
+                            dispatch({ type: "remove", index: i, dropzone });
+
+                            setItemSelector(null);
+
+                            e.stopPropagation();
+                          }}
+                          onDuplicate={(e) => {
+                            dispatch({
+                              type: "duplicate",
+                              sourceIndex: i,
+                              sourceDropzone: dropzone,
+                            });
+
+                            setItemSelector({ dropzone, index: i + 1 });
+
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div style={{ zoom: 0.75 }}>
+                            {config.components[item.type] ? (
+                              config.components[item.type].render(props)
+                            ) : (
+                              <div style={{ padding: 48, textAlign: "center" }}>
+                                No configuration for {item.type}
+                              </div>
+                            )}
+                          </div>
+                        </DraggableComponent>
+                      </DropZoneProvider>
+                      {userIsDragging && (
+                        <div
+                          className={getClassName("hitbox")}
+                          onMouseOver={(e) => {
+                            e.stopPropagation();
+                            setHoveringArea(dropzoneArea);
+                            setHoveringDropzone(dropzone);
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              {provided?.placeholder}
+              {snapshot?.isDraggingOver && (
+                <div
+                  style={{
+                    ...placeholderStyle,
+                    background: "var(--puck-color-azure-4)",
+                    opacity: 0.3,
+                    zIndex: 0,
+                  }}
+                />
+              )}
+            </div>
+          );
+        }}
+      </DroppableStrictMode>
+    </div>
   );
 }

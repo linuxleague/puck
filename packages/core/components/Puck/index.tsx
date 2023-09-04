@@ -8,7 +8,7 @@ import {
   useReducer,
   useState,
 } from "react";
-import { DragDropContext, DragStart } from "react-beautiful-dnd";
+import { DragDropContext, DragStart, DragUpdate } from "react-beautiful-dnd";
 import type { Config, Data, Field } from "../../types/Config";
 import { InputOrGroup } from "../InputOrGroup";
 import { ComponentList } from "../ComponentList";
@@ -151,15 +151,20 @@ export function Puck({
 
   const [leftSidebarVisible, setLeftSidebarVisible] = useState(true);
 
-  const [draggedItem, setDraggedItem] = useState<DragStart>();
+  const [draggedItem, setDraggedItem] = useState<
+    DragStart & Partial<DragUpdate>
+  >();
 
   return (
     <div className="puck">
       <DragDropContext
-        onDragUpdate={onDragUpdate}
-        onDragStart={(start) => {
-          setItemSelector(null);
+        onDragUpdate={(update) => {
+          setDraggedItem({ ...draggedItem, ...update });
+          onDragUpdate(update);
+        }}
+        onBeforeDragStart={(start) => {
           setDraggedItem(start);
+          setItemSelector(null);
         }}
         onDragEnd={(droppedItem) => {
           setDraggedItem(undefined);

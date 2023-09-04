@@ -19,7 +19,7 @@ export const DraggableComponent = ({
   onDuplicate = () => null,
   debug,
   label,
-  isHovering = false,
+  isLocked = false,
   isDragDisabled,
   style,
 }: {
@@ -34,7 +34,7 @@ export const DraggableComponent = ({
   onDuplicate?: (e: SyntheticEvent) => void;
   debug?: string;
   label?: string;
-  isHovering: boolean;
+  isLocked: boolean;
   isDragDisabled?: boolean;
   style?: CSSProperties;
 }) => {
@@ -56,7 +56,7 @@ export const DraggableComponent = ({
             isSelected,
             isModifierHeld,
             isDragging: snapshot.isDragging,
-            isHovering,
+            isLocked,
           })}
           style={{
             ...style,
@@ -72,24 +72,20 @@ export const DraggableComponent = ({
         >
           {debug}
           <div className={getClassName("contents")}>{children}</div>
-          {(isHovering || isSelected) && (
-            <div className={getClassName("overlay")}>
-              <div className={getClassName("actions")}>
-                {label && (
-                  <div className={getClassName("actionsLabel")}>{label}</div>
-                )}
-                <button
-                  className={getClassName("action")}
-                  onClick={onDuplicate}
-                >
-                  <Copy size={16} />
-                </button>
-                <button className={getClassName("action")} onClick={onDelete}>
-                  <Trash size={16} />
-                </button>
-              </div>
+
+          <div className={getClassName("overlay")}>
+            <div className={getClassName("actions")}>
+              {label && (
+                <div className={getClassName("actionsLabel")}>{label}</div>
+              )}
+              <button className={getClassName("action")} onClick={onDuplicate}>
+                <Copy size={16} />
+              </button>
+              <button className={getClassName("action")} onClick={onDelete}>
+                <Trash size={16} />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </Draggable>
