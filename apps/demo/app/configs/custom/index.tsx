@@ -1,9 +1,10 @@
 import { Config, Data } from "@measured/puck";
 import { ButtonGroup, ButtonGroupProps } from "./blocks/ButtonGroup";
+import { Card, CardProps } from "./blocks/Card";
 import { Columns, ColumnsProps } from "./blocks/Columns";
 import { Hero, HeroProps } from "./blocks/Hero";
 import { Heading, HeadingProps } from "./blocks/Heading";
-import { FeatureList, FeatureListProps } from "./blocks/FeatureList";
+import { Flex, FlexProps } from "./blocks/Flex";
 import { Logos, LogosProps } from "./blocks/Logos";
 import { Stats, StatsProps } from "./blocks/Stats";
 import { Text, TextProps } from "./blocks/Text";
@@ -13,10 +14,11 @@ import Root, { RootProps } from "./root";
 
 type Props = {
   ButtonGroup: ButtonGroupProps;
+  Card: CardProps;
   Columns: ColumnsProps;
   Hero: HeroProps;
   Heading: HeadingProps;
-  FeatureList: FeatureListProps;
+  Flex: FlexProps;
   Logos: LogosProps;
   Stats: StatsProps;
   Text: TextProps;
@@ -30,10 +32,11 @@ export const conf: Config<Props, RootProps> = {
   },
   components: {
     ButtonGroup,
+    Card,
     Columns,
     Hero,
     Heading,
-    FeatureList,
+    Flex,
     Logos,
     Stats,
     Text,

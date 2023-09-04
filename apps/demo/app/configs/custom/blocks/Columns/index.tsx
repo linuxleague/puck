@@ -1,36 +1,25 @@
-/* eslint-disable @next/next/no-img-element */
-import React, { ReactNode } from "react";
+import React from "react";
 import { ComponentConfig } from "@measured/puck/types/Config";
 import styles from "./styles.module.css";
 import { getClassNameFactory } from "@measured/puck/lib";
-import { Section } from "../../components/Section";
 import { DropZone } from "@measured/puck/components/DropZone";
-import { Data } from "@measured/puck";
+import { Section } from "../../components/Section";
 
 const getClassName = getClassNameFactory("Columns", styles);
 
 export type ColumnsProps = {
-  columns: {
-    label: string;
-  }[];
+  columns: {}[];
 };
 
 export const Columns: ComponentConfig<ColumnsProps> = {
   fields: {
     columns: {
       type: "array",
-      arrayFields: {
-        label: {
-          type: "text",
-        },
-      },
-      defaultItemProps: {
-        label: "Column",
-      },
+      getItemSummary: (_, id) => `Column ${id + 1}`,
     },
   },
   defaultProps: {
-    columns: [{ label: "My Col 1" }],
+    columns: [{}, {}],
   },
   render: ({ columns }) => {
     return (
@@ -39,7 +28,7 @@ export const Columns: ComponentConfig<ColumnsProps> = {
           className={getClassName()}
           style={{ gridTemplateColumns: `repeat(${columns.length},1fr)` }}
         >
-          {columns.map((column, idx) => (
+          {columns.map((_, idx) => (
             <div key={idx} className={getClassName("col")}>
               <DropZone id={`column-${idx}`} />
             </div>
@@ -47,13 +36,5 @@ export const Columns: ComponentConfig<ColumnsProps> = {
         </div>
       </Section>
     );
-  },
-};
-
-const example = {
-  type: "Column",
-  props: {},
-  dropzones: {
-    column1: [{}],
   },
 };

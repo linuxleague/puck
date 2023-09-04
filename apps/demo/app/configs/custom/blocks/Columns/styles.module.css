@@ -1,6 +1,6 @@
 .Columns {
   display: grid;
-  gap: 24px;
+  grid-gap: 24px;
   min-height: 0; /* NEW */
   min-width: 0; /* NEW; needed for Firefox */
 }
