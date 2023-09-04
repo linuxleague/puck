@@ -43,7 +43,9 @@
 }
 
 /* Won't work in FF */
-.DraggableComponent:has(.DraggableComponent:hover > .DraggableComponent-overlay)
+.DraggableComponent:not(.DraggableComponent--isSelected):has(
+    .DraggableComponent:hover > .DraggableComponent-overlay
+  )
   > .DraggableComponent-overlay {
   display: none;
 }
@@ -71,7 +73,9 @@
   box-sizing: border-box;
 }
 
-.DraggableComponent--isSelected .DraggableComponent-actions {
+.DraggableComponent--isSelected
+  > .DraggableComponent-overlay
+  > .DraggableComponent-actions {
   display: flex;
 }
 
