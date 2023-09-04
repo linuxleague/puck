@@ -4,6 +4,7 @@ import { DragStart, DragUpdate } from "react-beautiful-dnd";
 import { ItemSelector } from "../../lib/get-item";
 import { PuckAction } from "../../lib/reducer";
 import { rootDroppableId } from "../../lib/root-droppable-id";
+import { useDebounce } from "use-debounce";
 
 type ContextProps = {
   data: Data;
@@ -34,12 +35,14 @@ export const DropZoneProvider = ({
     rootDroppableId
   );
 
+  const [hoveringAreaDb] = useDebounce(hoveringArea, 100, { leading: false });
+
   return (
     <>
       {value && (
         <dropZoneContext.Provider
           value={{
-            hoveringArea,
+            hoveringArea: hoveringAreaDb,
             setHoveringArea,
             hoveringDropzone,
             setHoveringDropzone,
