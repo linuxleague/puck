@@ -63,7 +63,7 @@ export const DropZoneProvider = ({
       {value && (
         <dropZoneContext.Provider
           value={{
-            hoveringArea: hoveringAreaDb,
+            hoveringArea: value.draggedItem ? hoveringAreaDb : hoveringArea,
             setHoveringArea,
             hoveringDropzone,
             setHoveringDropzone,
