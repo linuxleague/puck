@@ -25,9 +25,8 @@ export function Client({
 
   // unique b64 key that updates each time we add / remove components
   const componentKey = Buffer.from(
-    Object.keys(config.components).join("-"),
-    "base64"
-  );
+    Object.keys(config.components).join("-")
+  ).toString("base64");
 
   const key = `puck-demo:${framework}:${componentKey}:${path}`;
 
