@@ -1,17 +1,14 @@
 "use client";
 
 import { Config, Data } from "../../types/Config";
+import { DropZone, DropZoneProvider } from "../DropZone";
 
 export function Render({ config, data }: { config: Config; data: Data }) {
-  const children = data.content.map((item) => {
-    const Component = config.components[item.type]?.render;
-
-    if (Component) {
-      return <Component key={item.props.id} {...item.props} />;
-    }
-
-    return null;
-  });
+  const children = (
+    <DropZoneProvider value={{ data, config, mode: "render" }}>
+      <DropZone />
+    </DropZoneProvider>
+  );
 
   if (config.root) {
     return (

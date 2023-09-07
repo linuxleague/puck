@@ -1,4 +1,4 @@
-import { CSSProperties, useContext, useEffect } from "react";
+import { CSSProperties, ReactElement, useContext, useEffect } from "react";
 import { DraggableComponent } from "../DraggableComponent";
 import DroppableStrictMode from "../DroppableStrictMode";
 import { getItem } from "../../lib/get-item";
@@ -12,24 +12,22 @@ const getClassName = getClassNameFactory("DropZone", styles);
 
 export { DropZoneProvider } from "./context";
 
-export function DropZone({
-  id,
-  direction = "vertical",
-  style,
-}: {
+type DropZoneProps = {
   id?: string;
   direction?: "vertical" | "horizontal";
   style?: CSSProperties;
-}) {
+};
+
+function DropZoneEdit({ id, direction = "vertical", style }: DropZoneProps) {
   const ctx = useContext(dropZoneContext);
 
   const {
     // These all need setting via context
     data,
-    dispatch,
+    dispatch = () => null,
     config,
     itemSelector,
-    setItemSelector,
+    setItemSelector = () => null,
     areaId,
     draggedItem,
     placeholderStyle,
@@ -68,7 +66,13 @@ export function DropZone({
   const draggingOverArea = userIsDragging && dropzoneArea === draggedSourceArea;
   const draggingNewComponent = draggedSourceId === "component-list";
 
-  if (!ctx?.config || !ctx.setHoveringArea || !ctx.setHoveringDropzone) {
+  if (
+    !ctx?.config ||
+    !ctx.setHoveringArea ||
+    !ctx.setHoveringDropzone ||
+    !ctx.setItemSelector ||
+    !ctx.dispatch
+  ) {
     return <div>DropZone requires context to work.</div>;
   }
 
@@ -267,4 +271,50 @@ export function DropZone({
       </DroppableStrictMode>
     </div>
   );
+}
+
+function DropZoneRender({ id }: DropZoneProps) {
+  const ctx = useContext(dropZoneContext);
+
+  const { data, areaId, config } = ctx || {};
+
+  let dropzone = rootDroppableId;
+  let content = data?.content;
+
+  if (!data || !config) {
+    return null;
+  }
+
+  if (areaId && id) {
+    dropzone = `${areaId}:${id}`;
+    content = setupDropzone(data, dropzone).dropzones[dropzone];
+  }
+
+  return (
+    <>
+      {content?.map((item) => {
+        const Component = config.components[item.type];
+
+        if (Component) {
+          return (
+            <DropZoneProvider value={{ data, config, areaId: item.props.id }}>
+              <Component.render key={item.props.id} {...item.props} />
+            </DropZoneProvider>
+          );
+        }
+
+        return null;
+      })}
+    </>
+  );
+}
+
+export function DropZone(props: DropZoneProps) {
+  const ctx = useContext(dropZoneContext);
+
+  if (ctx?.mode === "edit") {
+    return <DropZoneEdit {...props} />;
+  }
+
+  return <DropZoneRender {...props} />;
 }

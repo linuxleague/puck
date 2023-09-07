@@ -396,6 +396,7 @@ export function Puck({
                     dispatch,
                     draggedItem,
                     placeholderStyle,
+                    mode: "edit",
                   }}
                 >
                   <DropZone id={rootDroppableId} />

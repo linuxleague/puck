@@ -3,7 +3,6 @@ import {
   ReactNode,
   createContext,
   useCallback,
-  useContext,
   useState,
 } from "react";
 import { Config, Data } from "../../types/Config";
@@ -16,9 +15,9 @@ import { useDebounce } from "use-debounce";
 type ContextProps = {
   data: Data;
   config: Config;
-  itemSelector: ItemSelector | null;
-  setItemSelector: (newIndex: ItemSelector | null) => void;
-  dispatch: (action: PuckAction) => void;
+  itemSelector?: ItemSelector | null;
+  setItemSelector?: (newIndex: ItemSelector | null) => void;
+  dispatch?: (action: PuckAction) => void;
   areaId?: string;
   draggedItem?: DragStart & Partial<DragUpdate>;
   placeholderStyle?: CSSProperties;
@@ -28,6 +27,7 @@ type ContextProps = {
   setHoveringDropzone?: (dropzone: string | null) => void;
   registerDropzoneArea?: (areaId: string) => void;
   areasWithDropzones?: Record<string, boolean>;
+  mode?: "edit" | "render";
 } | null;
 
 export const dropZoneContext = createContext<ContextProps>(null);
