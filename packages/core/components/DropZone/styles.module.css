@@ -32,9 +32,20 @@
   outline: 2px dashed var(--puck-color-azure-7);
 }
 
-.DropZone--isDestination {
+.DropZone--isAreaSelected,
+.DropZone--draggingOverArea,
+.DropZone--hoveringOverArea:not(.DropZone--isDisabled):not(
+    .DropZone--isRootDropzone
+  ) {
   background: var(--puck-color-azure-9);
-  outline: 2px dashed var(--puck-color-azure-3);
+}
+
+.DropZone--isDestination {
+  outline: 2px dashed var(--puck-color-azure-3) !important;
+}
+
+.DropZone--isDestination:not(.DropZone--isRootDropzone) {
+  background: var(--puck-color-azure-8) !important;
 }
 
 .DropZone-item {

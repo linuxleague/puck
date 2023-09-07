@@ -172,6 +172,11 @@ export function DropZone({
                           index={i}
                           isSelected={isSelected}
                           isLocked={userIsDragging}
+                          forceHover={
+                            userIsDragging &&
+                            containsDropzone &&
+                            hoveringArea === componentId
+                          }
                           onClick={(e) => {
                             setItemSelector({
                               index: i,

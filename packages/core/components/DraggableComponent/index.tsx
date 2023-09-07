@@ -21,6 +21,7 @@ export const DraggableComponent = ({
   label,
   isLocked = false,
   isDragDisabled,
+  forceHover = false,
   style,
 }: {
   children: ReactNode;
@@ -36,6 +37,7 @@ export const DraggableComponent = ({
   label?: string;
   isLocked: boolean;
   isDragDisabled?: boolean;
+  forceHover?: boolean;
   style?: CSSProperties;
 }) => {
   const isModifierHeld = useModifierHeld("Alt");
@@ -57,6 +59,7 @@ export const DraggableComponent = ({
             isModifierHeld,
             isDragging: snapshot.isDragging,
             isLocked,
+            forceHover,
           })}
           style={{
             ...style,

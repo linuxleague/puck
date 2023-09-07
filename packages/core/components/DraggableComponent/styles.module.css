@@ -42,6 +42,12 @@
   pointer-events: none;
 }
 
+.DraggableComponent--forceHover > .DraggableComponent-overlay {
+  display: block;
+  background: transparent; /* We only use backgrounds on natural hovers */
+  pointer-events: none;
+}
+
 /* Won't work in FF */
 .DraggableComponent:not(.DraggableComponent--isSelected):has(
     .DraggableComponent:hover > .DraggableComponent-overlay
