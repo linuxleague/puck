@@ -58,8 +58,10 @@ export function DropZone({
   const draggedDestinationId =
     draggedItem && draggedItem.destination?.droppableId;
   const [dropzoneArea] = dropzone.split(":");
-  const [draggedSourceArea] = draggedSourceId
-    ? draggedSourceId?.split(":")
+
+  // we use the index rather than spread to prevent down-level iteration warnings: https://stackoverflow.com/questions/53441292/why-downleveliteration-is-not-on-by-default
+  const draggedSourceArea = draggedSourceId
+    ? draggedSourceId?.split(":")[0]
     : "";
 
   const userIsDragging = !!draggedItem;
