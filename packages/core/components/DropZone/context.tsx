@@ -1,4 +1,11 @@
-import { CSSProperties, ReactNode, createContext, useState } from "react";
+import {
+  CSSProperties,
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 import { Config, Data } from "../../types/Config";
 import { DragStart, DragUpdate } from "react-beautiful-dnd";
 import { ItemSelector } from "../../lib/get-item";
@@ -19,6 +26,8 @@ type ContextProps = {
   setHoveringArea?: (area: string | null) => void;
   hoveringDropzone?: string | null;
   setHoveringDropzone?: (dropzone: string | null) => void;
+  registerDropzoneArea?: (areaId: string) => void;
+  areasWithDropzones?: Record<string, boolean>;
 } | null;
 
 export const dropZoneContext = createContext<ContextProps>(null);
@@ -35,7 +44,19 @@ export const DropZoneProvider = ({
     rootDroppableId
   );
 
-  const [hoveringAreaDb] = useDebounce(hoveringArea, 100, { leading: false });
+  const [hoveringAreaDb] = useDebounce(hoveringArea, 75, { leading: false });
+
+  const [areasWithDropzones, setAreasWithDropzones] = useState<
+    Record<string, boolean>
+  >({});
+
+  const registerDropzoneArea = useCallback(
+    (area: string) => {
+      console.log("registering", area, areasWithDropzones);
+      setAreasWithDropzones((latest) => ({ ...latest, [area]: true }));
+    },
+    [setAreasWithDropzones, areasWithDropzones]
+  );
 
   return (
     <>
@@ -46,6 +67,8 @@ export const DropZoneProvider = ({
             setHoveringArea,
             hoveringDropzone,
             setHoveringDropzone,
+            registerDropzoneArea,
+            areasWithDropzones,
             ...value,
           }}
         >

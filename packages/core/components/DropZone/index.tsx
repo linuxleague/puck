@@ -1,4 +1,4 @@
-import { CSSProperties, useContext } from "react";
+import { CSSProperties, useContext, useEffect } from "react";
 import { DraggableComponent } from "../DraggableComponent";
 import DroppableStrictMode from "../DroppableStrictMode";
 import { getItem } from "../../lib/get-item";
@@ -33,10 +33,19 @@ export function DropZone({
     areaId,
     draggedItem,
     placeholderStyle,
+    registerDropzoneArea,
+    areasWithDropzones,
   } = ctx! || {};
 
   let content = data.content;
   let dropzone = rootDroppableId;
+
+  useEffect(() => {
+    if (areaId && registerDropzoneArea) {
+      registerDropzoneArea(areaId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [areaId]);
 
   if (areaId && id) {
     dropzone = `${areaId}:${id}`;
@@ -145,11 +154,9 @@ export function DropZone({
                   const isSelected =
                     selectedItem?.props.id === componentId || false;
 
-                  const containsDropzone = !!Object.keys(
-                    ctx?.data.dropzones || {}
-                  ).find(
-                    (dropzoneKey) => dropzoneKey.split(":")[0] === componentId
-                  );
+                  const containsDropzone = areasWithDropzones
+                    ? areasWithDropzones[componentId]
+                    : false;
 
                   return (
                     <div key={item.props.id} className={getClassName("item")}>
@@ -204,6 +211,12 @@ export function DropZone({
                             setItemSelector({ dropzone, index: i + 1 });
 
                             e.stopPropagation();
+                          }}
+                          style={{
+                            pointerEvents:
+                              userIsDragging && draggingNewComponent
+                                ? "all"
+                                : undefined,
                           }}
                         >
                           <div style={{ zoom: 0.75 }}>
