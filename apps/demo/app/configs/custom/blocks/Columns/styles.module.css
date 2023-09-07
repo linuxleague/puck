@@ -1,6 +1,13 @@
 .Columns {
-  display: grid;
-  grid-gap: 24px;
+  display: flex;
+  gap: 24px;
+  flex-direction: column;
   min-height: 0; /* NEW */
   min-width: 0; /* NEW; needed for Firefox */
+}
+
+@media (min-width: 768px) {
+  .Columns {
+    display: grid;
+  }
 }
