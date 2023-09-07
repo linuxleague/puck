@@ -169,8 +169,8 @@ export function Puck({
         onDragEnd={(droppedItem) => {
           setDraggedItem(undefined);
 
+          // User cancel drag
           if (!droppedItem.destination) {
-            console.warn("No destination specified");
             return;
           }
 
