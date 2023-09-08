@@ -1,18 +1,19 @@
 import { CSSProperties, useState } from "react";
-import { DragUpdate } from "react-beautiful-dnd";
+import { DragStart, DragUpdate } from "react-beautiful-dnd";
 
 export const usePlaceholderStyle = () => {
   const queryAttr = "data-rbd-drag-handle-draggable-id";
 
   const [placeholderStyle, setPlaceholderStyle] = useState<CSSProperties>();
 
-  const onDragUpdate = (update: DragUpdate) => {
-    if (!update.destination) {
-      return;
-    }
-    const draggableId = update.draggableId;
-    const destinationIndex = update.destination.index;
-    const droppableId = update.destination.droppableId;
+  const onDragStartOrUpdate = (
+    draggedItem: DragStart & Partial<DragUpdate>
+  ) => {
+    const draggableId = draggedItem.draggableId;
+    const destinationIndex = (draggedItem.destination || draggedItem.source)
+      .index;
+    const droppableId = (draggedItem.destination || draggedItem.source)
+      .droppableId;
 
     const domQuery = `[${queryAttr}='${draggableId}']`;
     const draggedDOM = document.querySelector(domQuery);
@@ -60,5 +61,5 @@ export const usePlaceholderStyle = () => {
     });
   };
 
-  return { onDragUpdate, placeholderStyle };
+  return { onDragStartOrUpdate, placeholderStyle };
 };

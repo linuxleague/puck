@@ -147,7 +147,7 @@ export function Puck({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const { onDragUpdate, placeholderStyle } = usePlaceholderStyle();
+  const { onDragStartOrUpdate, placeholderStyle } = usePlaceholderStyle();
 
   const [leftSidebarVisible, setLeftSidebarVisible] = useState(true);
 
@@ -160,10 +160,10 @@ export function Puck({
       <DragDropContext
         onDragUpdate={(update) => {
           setDraggedItem({ ...draggedItem, ...update });
-          onDragUpdate(update);
+          onDragStartOrUpdate(update);
         }}
         onBeforeDragStart={(start) => {
-          setDraggedItem(start);
+          onDragStartOrUpdate(start);
           setItemSelector(null);
         }}
         onDragEnd={(droppedItem) => {
