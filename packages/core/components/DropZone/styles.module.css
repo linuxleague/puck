@@ -45,7 +45,7 @@
 }
 
 .DropZone--isDestination:not(.DropZone--isRootDropzone) {
-  background: var(--puck-color-azure-8) !important;
+  background: var(--puck-color-azure-85) !important;
 }
 
 .DropZone-item {

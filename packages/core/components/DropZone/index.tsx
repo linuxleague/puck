@@ -259,7 +259,7 @@ function DropZoneEdit({ id, direction = "vertical", style }: DropZoneProps) {
                 <div
                   style={{
                     ...placeholderStyle,
-                    background: "var(--puck-color-azure-4)",
+                    background: "var(--puck-color-azure-5)",
                     opacity: 0.3,
                     zIndex: 0,
                   }}
