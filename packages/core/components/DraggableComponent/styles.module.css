@@ -23,7 +23,7 @@
 
 .DraggableComponent-overlay {
   display: none;
-  background: #abc7e510;
+  background: #abc7e530;
   outline: 2px var(--puck-color-azure-8) solid;
   cursor: pointer;
   height: 100%;
