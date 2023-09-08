@@ -52,10 +52,9 @@ export const DropZoneProvider = ({
 
   const registerDropzoneArea = useCallback(
     (area: string) => {
-      console.log("registering", area, areasWithDropzones);
       setAreasWithDropzones((latest) => ({ ...latest, [area]: true }));
     },
-    [setAreasWithDropzones, areasWithDropzones]
+    [setAreasWithDropzones]
   );
 
   return (
