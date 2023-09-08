@@ -12,7 +12,7 @@ import { DragDropContext, DragStart, DragUpdate } from "react-beautiful-dnd";
 import type { Config, Data, Field } from "../../types/Config";
 import { InputOrGroup } from "../InputOrGroup";
 import { ComponentList } from "../ComponentList";
-import { OutlineList } from "../OutlineList";
+import { DeepOutlineList } from "../OutlineList";
 import { filter } from "../../lib";
 import { Button } from "../Button";
 
@@ -20,7 +20,6 @@ import { Plugin } from "../../types/Plugin";
 import { usePlaceholderStyle } from "../../lib/use-placeholder-style";
 
 import { SidebarSection } from "../SidebarSection";
-import { scrollIntoView } from "../../lib/scroll-into-view";
 import { Globe, Sidebar } from "react-feather";
 import { Heading } from "../Heading";
 import { IconButton } from "../IconButton/IconButton";
@@ -341,30 +340,11 @@ export function Puck({
                   Add items to your page
                 </div>
               )}
-              <OutlineList>
-                {data.content.map((item, i) => {
-                  return (
-                    <OutlineList.Item
-                      key={i}
-                      onClick={() => {
-                        setItemSelector({
-                          index: i,
-                        });
-
-                        const id = data.content[i].props.id;
-
-                        scrollIntoView(
-                          document.querySelector(
-                            `[data-rbd-drag-handle-draggable-id="draggable-${id}"]`
-                          ) as HTMLElement
-                        );
-                      }}
-                    >
-                      {item.type}
-                    </OutlineList.Item>
-                  );
-                })}
-              </OutlineList>
+              <DeepOutlineList
+                data={data}
+                currentContent={data.content}
+                setItemSelector={setItemSelector}
+              />
             </SidebarSection>
           </div>
           <div
