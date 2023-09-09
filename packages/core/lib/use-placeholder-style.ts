@@ -37,7 +37,7 @@ export const usePlaceholderStyle = () => {
     if (destinationIndex > 0) {
       const children = Array.from(targetListElement.children)
         .filter((item) => item !== draggedDOM)
-        .slice(0, destinationIndex);
+        .slice(0, destinationIndex + 1);
 
       clientY = children.reduce(
         (total, item) =>
