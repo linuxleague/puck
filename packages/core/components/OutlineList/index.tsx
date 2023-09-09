@@ -38,17 +38,31 @@ export const DeepOutlineList = ({
   data,
   currentContent,
   setItemSelector,
+  dropzone,
 }: {
   data: Data;
   currentContent: Data["content"];
   setItemSelector: (item: ItemSelector) => void;
+  dropzone?: string;
 }) => {
+  const dropzones = data.dropzones || {};
+
   return (
     <OutlineList>
       {currentContent.map((item, i) => {
-        const containsDropzone = !!Object.keys(data.dropzones || {}).find(
+        const containsDropzone = !!Object.keys(dropzones).find(
           (dropzoneKey) => dropzoneKey.split(":")[0] === item.props.id
         );
+
+        const dropzonesForItem = Object.keys(dropzones)
+          .filter((key) => {
+            const [areaId] = key.split(":");
+
+            return areaId === item.props.id;
+          })
+          .reduce((acc, key) => {
+            return { ...acc, [key]: dropzones[key] };
+          }, {});
 
         return (
           <OutlineList.Item key={i}>
@@ -57,6 +71,7 @@ export const DeepOutlineList = ({
                 onClick={() => {
                   setItemSelector({
                     index: i,
+                    dropzone,
                   });
 
                   const id = currentContent[i].props.id;
@@ -71,7 +86,18 @@ export const DeepOutlineList = ({
                 {item.type}
               </div>
             </OutlineList.Clickable>
-            {/* {containsDropzone && data.dropzones!<DeepOutlineList data={data} content={} />} */}
+            {containsDropzone &&
+              Object.keys(dropzonesForItem).map((dropzoneKey, idx) => (
+                <details key={idx} style={{ marginLeft: 12 }}>
+                  <summary>{dropzoneKey.split(":")[1]}</summary>
+                  <DeepOutlineList
+                    data={data}
+                    currentContent={dropzones[dropzoneKey]}
+                    setItemSelector={setItemSelector}
+                    dropzone={dropzoneKey}
+                  />
+                </details>
+              ))}
           </OutlineList.Item>
         );
       })}
