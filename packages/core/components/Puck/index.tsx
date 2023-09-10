@@ -12,7 +12,6 @@ import { DragDropContext, DragStart, DragUpdate } from "react-beautiful-dnd";
 import type { Config, Data, Field } from "../../types/Config";
 import { InputOrGroup } from "../InputOrGroup";
 import { ComponentList } from "../ComponentList";
-import { DeepOutlineList } from "../OutlineList";
 import { filter } from "../../lib";
 import { Button } from "../Button";
 
@@ -27,6 +26,7 @@ import { DropZone, DropZoneProvider } from "../DropZone";
 import { rootDroppableId } from "../../lib/root-droppable-id";
 import { ItemSelector, getItem } from "../../lib/get-item";
 import { PuckAction, StateReducer, createReducer } from "../../lib/reducer";
+import { LayerTree } from "../LayerTree";
 
 const Field = () => {};
 
@@ -340,10 +340,11 @@ export function Puck({
                   Add items to your page
                 </div>
               )}
-              <DeepOutlineList
+              <LayerTree
                 data={data}
                 currentContent={data.content}
                 setItemSelector={setItemSelector}
+                itemSelector={itemSelector}
               />
             </SidebarSection>
           </div>
